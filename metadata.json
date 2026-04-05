@@ -1,0 +1,8 @@
+{
+  "name": "Dijilla",
+  "description": "A premium, AI-powered roadside assistance and vehicle management application.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}
