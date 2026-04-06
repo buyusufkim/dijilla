@@ -15,9 +15,9 @@ interface FamilyContextType {
 }
 
 const defaultMembers: FamilyMember[] = [
-  { id: "1", name: "Mustafa Gülmarka", role: "self", avatarColor: "from-[#00E5FF] to-blue-600" },
-  { id: "2", name: "Ayşe Gülmarka", role: "spouse", avatarColor: "from-purple-500 to-pink-500" },
-  { id: "3", name: "Can Gülmarka", role: "child", avatarColor: "from-[#00E676] to-emerald-600" },
+  { id: "1", name: "Ahmet Yılmaz", role: "self", avatarColor: "from-[#00E5FF] to-blue-600" },
+  { id: "2", name: "Ayşe Yılmaz", role: "spouse", avatarColor: "from-purple-500 to-pink-500" },
+  { id: "3", name: "Can Yılmaz", role: "child", avatarColor: "from-[#00E676] to-emerald-600" },
 ];
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);

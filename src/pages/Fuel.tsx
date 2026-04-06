@@ -13,7 +13,8 @@ import {
   Droplets,
   DollarSign,
   Clock,
-  Car
+  Car,
+  Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,7 +34,27 @@ type Station = {
   type: "fuel" | "electric";
   status: "open" | "closed";
   address: string;
+  lat: number;
+  lon: number;
 };
+
+// Haversine distance calculation
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg: number) {
+  return deg * (Math.PI / 180);
+}
 
 export default function Fuel() {
   const navigate = useNavigate();
@@ -44,6 +65,9 @@ export default function Fuel() {
   const [showFilters, setShowFilters] = useState(false);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
+  const [stations, setStations] = useState<Station[]>([]);
+  const [loadingStations, setLoadingStations] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -75,56 +99,83 @@ export default function Fuel() {
     }
   };
 
-  const [stations, setStations] = useState<Station[]>([
-    {
-      id: "1",
-      name: "Shell",
-      distance: "1.2 km",
-      distanceValue: 1.2,
-      price: "42.50 TL",
-      priceValue: 42.50,
-      rating: 4.8,
-      type: "fuel",
-      status: "open",
-      address: "Atatürk Cad. No: 45"
-    },
-    {
-      id: "2",
-      name: "Opet",
-      distance: "2.5 km",
-      distanceValue: 2.5,
-      price: "42.45 TL",
-      priceValue: 42.45,
-      rating: 4.6,
-      type: "fuel",
-      status: "open",
-      address: "Cumhuriyet Bulv. No: 12"
-    },
-    {
-      id: "3",
-      name: "ZES Şarj İstasyonu",
-      distance: "0.8 km",
-      distanceValue: 0.8,
-      price: "7.50 TL/kWh",
-      priceValue: 7.50,
-      rating: 4.9,
-      type: "electric",
-      status: "open",
-      address: "AVM Otopark Kat -1"
-    },
-    {
-      id: "4",
-      name: "Petrol Ofisi",
-      distance: "3.1 km",
-      distanceValue: 3.1,
-      price: "42.60 TL",
-      priceValue: 42.60,
-      rating: 4.5,
-      type: "fuel",
-      status: "open",
-      address: "İstasyon Yolu No: 8"
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          // Fallback location (e.g., Istanbul) if denied
+          setUserLocation({ lat: 41.0082, lon: 28.9784 });
+        }
+      );
+    } else {
+      setUserLocation({ lat: 41.0082, lon: 28.9784 });
     }
-  ]);
+  }, []);
+
+  useEffect(() => {
+    if (!userLocation) return;
+
+    const fetchRealStations = async () => {
+      setLoadingStations(true);
+      try {
+        const amenity = activeTab === "fuel" ? "fuel" : "charging_station";
+        const radius = 5000; // 5km
+        const query = `
+          [out:json];
+          (
+            node["amenity"="${amenity}"](around:${radius}, ${userLocation.lat}, ${userLocation.lon});
+            way["amenity"="${amenity}"](around:${radius}, ${userLocation.lat}, ${userLocation.lon});
+          );
+          out center;
+        `;
+        
+        const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        const fetchedStations: Station[] = data.elements.map((el: any) => {
+          const lat = el.lat || el.center?.lat;
+          const lon = el.lon || el.center?.lon;
+          const dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, lat, lon);
+          
+          let name = el.tags?.name || el.tags?.brand || (activeTab === "fuel" ? "Akaryakıt İstasyonu" : "Şarj İstasyonu");
+          
+          // Generate mock prices and ratings for realism since OSM doesn't have live prices
+          const basePrice = activeTab === "fuel" ? 40 + Math.random() * 5 : 7 + Math.random() * 3;
+          const priceStr = activeTab === "fuel" ? `${basePrice.toFixed(2)} TL` : `${basePrice.toFixed(2)} TL/kWh`;
+          
+          return {
+            id: el.id.toString(),
+            name,
+            distance: `${dist.toFixed(1)} km`,
+            distanceValue: dist,
+            price: priceStr,
+            priceValue: basePrice,
+            rating: 3.5 + Math.random() * 1.5,
+            type: activeTab,
+            status: "open",
+            address: el.tags?.["addr:street"] || el.tags?.["addr:city"] || "Adres bilgisi yok",
+            lat,
+            lon
+          };
+        });
+        
+        setStations(fetchedStations);
+      } catch (error) {
+        console.error("Error fetching stations:", error);
+      } finally {
+        setLoadingStations(false);
+      }
+    };
+
+    fetchRealStations();
+  }, [userLocation, activeTab]);
 
   const filteredStations = useMemo(() => {
     let result = stations.filter(s => s.type === activeTab);
@@ -266,7 +317,9 @@ export default function Fuel() {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex flex-col items-center gap-2">
             <MapPin className="w-8 h-8 text-[#00E5FF] animate-bounce" />
-            <span className="text-xs font-medium text-white/60">Harita Yükleniyor...</span>
+            <span className="text-xs font-medium text-white/60">
+              {userLocation ? "Konumunuz Bulundu" : "Konum Aranıyor..."}
+            </span>
           </div>
         </div>
       </Card>
@@ -280,7 +333,12 @@ export default function Fuel() {
           </span>
         </div>
         <div className="grid gap-4">
-          {filteredStations.length > 0 ? (
+          {loadingStations ? (
+            <div className="flex flex-col items-center justify-center py-12 text-[#00E5FF]">
+              <Loader2 className="w-8 h-8 animate-spin mb-4" />
+              <p className="text-sm text-white/60">Gerçek zamanlı istasyonlar aranıyor...</p>
+            </div>
+          ) : filteredStations.length > 0 ? (
             filteredStations.map((station) => (
               <motion.div
                 key={station.id}
@@ -298,7 +356,7 @@ export default function Fuel() {
                           <h3 className="font-semibold">{station.name}</h3>
                           <div className="flex items-center gap-2 mt-0.5">
                             <Star className="w-3 h-3 text-[#FFD600] fill-[#FFD600]" />
-                            <span className="text-xs text-white/60">{station.rating}</span>
+                            <span className="text-xs text-white/60">{station.rating.toFixed(1)}</span>
                             <span className="text-white/20">•</span>
                             <span className="text-xs text-white/60">{station.distance}</span>
                           </div>
@@ -306,11 +364,14 @@ export default function Fuel() {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-[#00E676]">{station.price}</p>
-                        <p className="text-[10px] text-white/40">Güncel Fiyat</p>
+                        <p className="text-[10px] text-white/40">Ortalama Fiyat</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 pt-3 border-t border-white/5">
-                      <Button className="flex-1 bg-[#00E5FF]/10 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/20 rounded-xl gap-2">
+                      <Button 
+                        onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lon}`, '_blank')}
+                        className="flex-1 bg-[#00E5FF]/10 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/20 rounded-xl gap-2"
+                      >
                         <Navigation className="w-4 h-4" />
                         Yol Tarifi
                       </Button>

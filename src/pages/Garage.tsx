@@ -35,6 +35,12 @@ type Vehicle = {
   tax_status: string;
 };
 
+type HomeAsset = {
+  id: string;
+  name: string;
+  address: string;
+};
+
 export default function Garage() {
   const { activeMember } = useFamily();
   const navigate = useNavigate();
@@ -47,7 +53,9 @@ export default function Garage() {
   const [model, setModel] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
   const [fuelType, setFuelType] = useState("Benzin");
+  
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [homes, setHomes] = useState<HomeAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,13 +65,13 @@ export default function Garage() {
       return;
     }
 
-    const q = query(
+    const qVehicles = query(
       collection(db, "vehicles"),
       where("user_id", "==", user.uid),
       orderBy("created_at", "desc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeVehicles = onSnapshot(qVehicles, (snapshot) => {
       const vehicleData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -75,7 +83,26 @@ export default function Garage() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    const qHomes = query(
+      collection(db, "homes"),
+      where("user_id", "==", user.uid),
+      orderBy("created_at", "desc")
+    );
+
+    const unsubscribeHomes = onSnapshot(qHomes, (snapshot) => {
+      const homeData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as HomeAsset[];
+      setHomes(homeData);
+    }, (error) => {
+      console.error("Error fetching homes:", error);
+    });
+
+    return () => {
+      unsubscribeVehicles();
+      unsubscribeHomes();
+    };
   }, [user]);
 
   const handleAddAsset = async () => {
@@ -112,10 +139,23 @@ export default function Garage() {
       }
     } else {
       if (!assetName.trim() || !assetDetail.trim()) return;
-      // Mock adding home
-      setIsAddingAsset(false);
-      setAssetName("");
-      setAssetDetail("");
+      setIsSubmitting(true);
+      try {
+        await addDoc(collection(db, "homes"), {
+          user_id: user.uid,
+          name: assetName,
+          address: assetDetail,
+          created_at: serverTimestamp()
+        });
+
+        setIsAddingAsset(false);
+        setAssetName("");
+        setAssetDetail("");
+      } catch (error) {
+        console.error('Error adding home:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -246,34 +286,37 @@ export default function Garage() {
         {/* Real Estate */}
         <div className="space-y-6">
           <h2 className="text-xl font-semibold">Konutlar</h2>
-          <Card className="bg-gradient-to-br from-[#1A233A] to-[#0A1128] border-purple-500/30 relative overflow-hidden group cursor-pointer">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors"></div>
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium mb-3 border border-purple-500/30">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    DASK Aktif
+          
+          {homes.map((home) => (
+            <Card key={home.id} className="bg-gradient-to-br from-[#1A233A] to-[#0A1128] border-purple-500/30 relative overflow-hidden group cursor-pointer mb-4">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors"></div>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium mb-3 border border-purple-500/30">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      DASK Aktif
+                    </div>
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      {home.name}
+                    </h2>
+                    <p className="text-white/50 text-sm mt-1">
+                      {home.address}
+                    </p>
                   </div>
-                  <h2 className="text-2xl font-bold tracking-tight">
-                    Beşiktaş Ev
-                  </h2>
-                  <p className="text-white/50 text-sm mt-1">
-                    Barbaros Blv. No:145, Beşiktaş/İstanbul
-                  </p>
+                  <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+                    <Home className="w-8 h-8 text-purple-400" />
+                  </div>
                 </div>
-                <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
-                  <Home className="w-8 h-8 text-purple-400" />
+                <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-2">
+                  <span className="text-sm text-white/60">
+                    Detayları Görüntüle
+                  </span>
+                  <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
                 </div>
-              </div>
-              <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-2">
-                <span className="text-sm text-white/60">
-                  Detayları Görüntüle
-                </span>
-                <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
 
           <Card 
             className="bg-[#1A233A]/50 border-dashed border-2 border-white/10 hover:border-white/20 transition-colors cursor-pointer"

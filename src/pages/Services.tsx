@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search,
@@ -15,7 +15,8 @@ import {
   Camera,
   Fuel,
   BarChart3,
-  Bot
+  Bot,
+  MapPin
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,20 @@ const categories = [
   },
 ];
 
+// Helper to calculate distance
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
 export default function Services() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -142,6 +157,89 @@ export default function Services() {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [places, setPlaces] = useState<any[]>([]);
+  const [loadingPlaces, setLoadingPlaces] = useState(false);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error("Error getting location", error);
+          // Fallback to Istanbul
+          setUserLocation({ lat: 41.0082, lon: 28.9784 });
+        }
+      );
+    } else {
+      setUserLocation({ lat: 41.0082, lon: 28.9784 });
+    }
+  }, []);
+
+  const fetchPlaces = async (type: string) => {
+    if (!userLocation) return;
+    setLoadingPlaces(true);
+    setPlaces([]);
+    
+    let amenity = "";
+    if (type === "Nöbetçi Eczane") amenity = "pharmacy";
+    else if (type === "Anlaşmalı Hastane") amenity = "hospital";
+    else if (type === "Oto Servisler") amenity = "car_repair";
+    else {
+      setLoadingPlaces(false);
+      return;
+    }
+
+    try {
+      const radius = 5000; // 5km
+      const query = `
+        [out:json][timeout:25];
+        (
+          node["amenity"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
+          way["amenity"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
+          relation["amenity"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
+        );
+        out center;
+      `;
+      const response = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query
+      });
+      const data = await response.json();
+      
+      const fetchedPlaces = data.elements.map((el: any) => {
+        const lat = el.lat || el.center?.lat;
+        const lon = el.lon || el.center?.lon;
+        const dist = calculateDistance(userLocation.lat, userLocation.lon, lat, lon);
+        return {
+          id: el.id,
+          name: el.tags?.name || (amenity === "pharmacy" ? "Eczane" : amenity === "hospital" ? "Hastane" : "Oto Servis"),
+          addr: el.tags?.["addr:street"] ? `${el.tags["addr:street"]} ${el.tags["addr:housenumber"] || ""}` : "Adres bilgisi yok",
+          dist: dist,
+          lat,
+          lon
+        };
+      }).sort((a: any, b: any) => a.dist - b.dist).slice(0, 10); // Top 10 closest
+
+      setPlaces(fetchedPlaces);
+    } catch (error) {
+      console.error("Error fetching places:", error);
+    } finally {
+      setLoadingPlaces(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedService && ["Nöbetçi Eczane", "Anlaşmalı Hastane", "Oto Servisler"].includes(selectedService.label)) {
+      fetchPlaces(selectedService.label);
+    }
+  }, [selectedService, userLocation]);
 
   const filteredCategories = categories.map(category => ({
     ...category,
@@ -189,6 +287,10 @@ export default function Services() {
     }
   };
 
+  const handleNavigateToPlace = (lat: number, lon: number) => {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`, '_blank');
+  };
+
   const renderServiceContent = () => {
     if (showSuccess) {
       return (
@@ -204,25 +306,55 @@ export default function Services() {
 
     switch (selectedService?.label) {
       case "Nöbetçi Eczane":
-      case "Nöbetçi Noter":
       case "Anlaşmalı Hastane":
       case "Oto Servisler":
-        const items = selectedService.label === "Nöbetçi Eczane" ? [
-          { name: "Güneş Eczanesi", dist: "0.4 km", addr: "Mecidiyeköy Mah. No:12" },
-          { name: "Hayat Eczanesi", dist: "1.2 km", addr: "Fulya Sok. No:45" },
-          { name: "Merkez Eczanesi", dist: "2.5 km", addr: "Büyükdere Cad. No:88" },
-        ] : selectedService.label === "Anlaşmalı Hastane" ? [
-          { name: "Acıbadem Maslak", dist: "3.2 km", addr: "Maslak Mah. No:1" },
-          { name: "Florence Nightingale", dist: "1.8 km", addr: "Şişli Merkez" },
-        ] : [
-          { name: "Örnek Nokta 1", dist: "0.8 km", addr: "Merkez Mah. No:5" },
-          { name: "Örnek Nokta 2", dist: "2.1 km", addr: "Sanayi Sit. No:14" },
-        ];
         return (
           <div className="space-y-4">
             <p className="text-sm text-white/60 text-left">Size en yakın noktalar listelenmiştir:</p>
+            {loadingPlaces ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-[#00E5FF]" />
+              </div>
+            ) : places.length === 0 ? (
+              <div className="text-center py-8 text-white/40">
+                Yakınınızda uygun nokta bulunamadı.
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                {places.map((item, i) => (
+                  <div 
+                    key={i} 
+                    onClick={() => handleNavigateToPlace(item.lat, item.lon)}
+                    className="p-4 bg-[#0A1128] rounded-xl border border-white/5 flex items-center justify-between group hover:border-[#00E5FF]/30 transition-all cursor-pointer"
+                  >
+                    <div className="text-left flex-1 mr-4">
+                      <p className="font-bold text-sm">{item.name}</p>
+                      <p className="text-xs text-white/40 mt-1 line-clamp-1">{item.addr}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-bold text-[#00E5FF]">{item.dist.toFixed(1)} km</p>
+                      <div className="flex items-center justify-end gap-1 mt-1 text-white/20 group-hover:text-[#00E5FF] transition-colors">
+                        <MapPin className="w-3 h-3" />
+                        <span className="text-[10px] uppercase font-bold">Yol Tarifi</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+      case "Nöbetçi Noter":
+        const noterItems = [
+          { name: "1. Noter", dist: "0.8 km", addr: "Merkez Mah. No:5" },
+          { name: "2. Noter", dist: "2.1 km", addr: "Sanayi Sit. No:14" },
+        ];
+        return (
+          <div className="space-y-4">
+            <p className="text-sm text-white/60 text-left">Size en yakın nöbetçi noterler:</p>
             <div className="space-y-3">
-              {items.map((item, i) => (
+              {noterItems.map((item, i) => (
                 <div key={i} className="p-4 bg-[#0A1128] rounded-xl border border-white/5 flex items-center justify-between group hover:border-[#00E5FF]/30 transition-all cursor-pointer">
                   <div className="text-left">
                     <p className="font-bold text-sm">{item.name}</p>
@@ -418,3 +550,4 @@ export default function Services() {
     </div>
   );
 }
+

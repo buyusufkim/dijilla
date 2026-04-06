@@ -17,9 +17,18 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase";
-import { collection, query, where, onSnapshot, orderBy } from "@/firebase";
+import { collection, query, where, onSnapshot, orderBy, addDoc, deleteDoc, doc } from "@/firebase";
 
 type Document = {
   id: string;
@@ -35,6 +44,13 @@ export default function Glovebox() {
   const { user } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [newDoc, setNewDoc] = useState({
+    title: "",
+    type: "other" as Document["type"],
+    expiry_date: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -83,6 +99,51 @@ export default function Glovebox() {
 
   const warningCount = documents.filter(d => d.status === 'warning' || d.status === 'expired').length;
 
+  const handleAddDocument = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Determine status based on expiry date
+      const expiry = new Date(newDoc.expiry_date);
+      const now = new Date();
+      const diffTime = Math.abs(expiry.getTime() - now.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      let status: Document["status"] = "valid";
+      if (expiry < now) {
+        status = "expired";
+      } else if (diffDays <= 30) {
+        status = "warning";
+      }
+
+      await addDoc(collection(db, "documents"), {
+        user_id: user.uid,
+        title: newDoc.title,
+        type: newDoc.type,
+        expiry_date: newDoc.expiry_date,
+        status,
+        created_at: new Date().toISOString()
+      });
+      
+      setIsAddOpen(false);
+      setNewDoc({ title: "", type: "other", expiry_date: "" });
+    } catch (error) {
+      console.error("Error adding document:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "documents", id));
+    } catch (error) {
+      console.error("Error deleting document:", error);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-24">
       {/* Header */}
@@ -93,10 +154,65 @@ export default function Glovebox() {
           </button>
           <h1 className="text-2xl font-bold tracking-tight">Dijital Torpido</h1>
         </div>
-        <Button className="bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] rounded-xl gap-2">
-          <Plus className="w-4 h-4" />
-          Ekle
-        </Button>
+        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] rounded-xl gap-2">
+              <Plus className="w-4 h-4" />
+              Ekle
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-[#1A233A] text-white border-white/10 sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Yeni Belge Ekle</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleAddDocument} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Belge Adı</Label>
+                <Input 
+                  id="title" 
+                  value={newDoc.title}
+                  onChange={(e) => setNewDoc({...newDoc, title: e.target.value})}
+                  className="bg-white/5 border-white/10 text-white" 
+                  placeholder="Örn: Kasko Poliçesi"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="type">Belge Türü</Label>
+                <select 
+                  id="type"
+                  value={newDoc.type}
+                  onChange={(e) => setNewDoc({...newDoc, type: e.target.value as Document["type"]})}
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-white"
+                  required
+                >
+                  <option value="license" className="bg-[#1A233A]">Ehliyet</option>
+                  <option value="insurance" className="bg-[#1A233A]">Sigorta / Kasko</option>
+                  <option value="registration" className="bg-[#1A233A]">Ruhsat</option>
+                  <option value="other" className="bg-[#1A233A]">Diğer</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="expiry">Son Geçerlilik Tarihi</Label>
+                <Input 
+                  id="expiry" 
+                  type="date"
+                  value={newDoc.expiry_date}
+                  onChange={(e) => setNewDoc({...newDoc, expiry_date: e.target.value})}
+                  className="bg-white/5 border-white/10 text-white [color-scheme:dark]" 
+                  required
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128]"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Kaydet"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </header>
 
       {/* Stats */}
@@ -155,7 +271,7 @@ export default function Glovebox() {
                         <button className="p-2 text-white/40 hover:text-white transition-colors">
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-white/40 hover:text-[#FF5252] transition-colors">
+                        <button onClick={() => handleDelete(doc.id)} className="p-2 text-white/40 hover:text-[#FF5252] transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

@@ -133,6 +133,18 @@ export default function TowTruck() {
             } catch (error) {
               console.error("Reverse geocoding error:", error);
             }
+          } else {
+            try {
+              const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+              const data = await response.json();
+              if (data.display_name) {
+                setAddress(data.display_name);
+                setIsLocating(false);
+                return;
+              }
+            } catch (error) {
+              console.error("Nominatim reverse geocoding error:", error);
+            }
           }
           
           setAddress(`${latitude}, ${longitude}`);

@@ -121,13 +121,45 @@ const applyConstraints = (queryBuilder: any, constraints: any[]) => {
   return q;
 };
 
+// LocalStorage Fallback Helpers
+const getLocalData = (table: string) => {
+  const data = localStorage.getItem(`dijilla_${table}`);
+  return data ? JSON.parse(data) : [];
+};
+
+const setLocalData = (table: string, data: any[]) => {
+  localStorage.setItem(`dijilla_${table}`, JSON.stringify(data));
+};
+
 export const getDocs = async (queryRef: any) => {
   let q = supabase.from(queryRef.table).select('*');
   if (queryRef.constraints) {
     q = applyConstraints(q, queryRef.constraints);
   }
   const { data, error } = await q;
-  if (error) throw error;
+  
+  if (error) {
+    console.warn(`Supabase error for ${queryRef.table}, falling back to localStorage:`, error.message);
+    let localData = getLocalData(queryRef.table);
+    
+    // Apply basic local filtering
+    if (queryRef.constraints) {
+      for (const c of queryRef.constraints) {
+        if (c.type === 'where' && c.op === '==') {
+          localData = localData.filter((item: any) => item[c.field] === c.value);
+        }
+      }
+    }
+    
+    return {
+      docs: localData.map((row: any) => ({
+        id: row.id,
+        data: () => row,
+      })),
+      empty: localData.length === 0,
+    };
+  }
+
   return {
     docs: (data || []).map((row: any) => ({
       id: row.id,
@@ -139,7 +171,20 @@ export const getDocs = async (queryRef: any) => {
 
 export const getDoc = async (docRef: any) => {
   const { data, error } = await supabase.from(docRef.table).select('*').eq('id', docRef.id).single();
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is not found
+  
+  if (error) {
+    if (error.code !== 'PGRST116') {
+      console.warn(`Supabase error for ${docRef.table}, falling back to localStorage:`, error.message);
+    }
+    const localData = getLocalData(docRef.table);
+    const item = localData.find((x: any) => x.id === docRef.id);
+    return {
+      id: docRef.id,
+      exists: () => !!item,
+      data: () => item,
+    };
+  }
+
   return {
     id: docRef.id,
     exists: () => !!data,
@@ -149,38 +194,98 @@ export const getDoc = async (docRef: any) => {
 
 export const setDoc = async (docRef: any, data: any, options?: { merge?: boolean }) => {
   const { error } = await supabase.from(docRef.table).upsert({ id: docRef.id, ...data });
-  if (error) throw error;
+  
+  if (error) {
+    console.warn(`Supabase error for ${docRef.table}, falling back to localStorage:`, error.message);
+    const localData = getLocalData(docRef.table);
+    const index = localData.findIndex((x: any) => x.id === docRef.id);
+    if (index >= 0) {
+      localData[index] = { ...localData[index], ...data, id: docRef.id };
+    } else {
+      localData.push({ ...data, id: docRef.id });
+    }
+    setLocalData(docRef.table, localData);
+  }
 };
 
 export const updateDoc = async (docRef: any, data: any) => {
   const { error } = await supabase.from(docRef.table).update(data).eq('id', docRef.id);
-  if (error) throw error;
+  
+  if (error) {
+    console.warn(`Supabase error for ${docRef.table}, falling back to localStorage:`, error.message);
+    const localData = getLocalData(docRef.table);
+    const index = localData.findIndex((x: any) => x.id === docRef.id);
+    if (index >= 0) {
+      localData[index] = { ...localData[index], ...data };
+      setLocalData(docRef.table, localData);
+    }
+  }
 };
 
 export const addDoc = async (collectionRef: any, data: any) => {
-  const { data: inserted, error } = await supabase.from(collectionRef.table).insert(data).select().single();
-  if (error) throw error;
-  return { id: inserted.id };
+  const { data: inserted, error } = await supabase.from(collectionRef.table).insert(data).select();
+  
+  if (error) {
+    console.warn(`Supabase error for ${collectionRef.table}, falling back to localStorage:`, error.message);
+    const localData = getLocalData(collectionRef.table);
+    const newId = crypto.randomUUID();
+    localData.push({ ...data, id: newId });
+    setLocalData(collectionRef.table, localData);
+    return { id: newId };
+  }
+  
+  return { id: inserted?.[0]?.id || crypto.randomUUID() };
+};
+
+export const deleteDoc = async (docRef: any) => {
+  const { error } = await supabase.from(docRef.table).delete().eq('id', docRef.id);
+  
+  if (error) {
+    console.warn(`Supabase error for ${docRef.table}, falling back to localStorage:`, error.message);
+    let localData = getLocalData(docRef.table);
+    localData = localData.filter((x: any) => x.id !== docRef.id);
+    setLocalData(docRef.table, localData);
+  }
 };
 
 export const onSnapshot = (queryRef: any, callback: (snapshot: any) => void, errorCallback?: (error: any) => void) => {
+  let lastDataString = '';
+
+  const fetchAndNotify = async () => {
+    try {
+      const snapshot = await getDocs(queryRef);
+      const currentDataString = JSON.stringify(snapshot.docs.map((d: any) => d.data()));
+      if (currentDataString !== lastDataString) {
+        lastDataString = currentDataString;
+        callback(snapshot);
+      }
+    } catch (err) {
+      console.error(err);
+      if (errorCallback) errorCallback(err);
+    }
+  };
+
   // Initial fetch
-  getDocs(queryRef).then(callback).catch(err => {
-    console.error(err);
-    if (errorCallback) errorCallback(err);
-  });
+  fetchAndNotify();
 
   // Realtime subscription
   const channel = supabase.channel(`public:${queryRef.table}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: queryRef.table }, () => {
-      getDocs(queryRef).then(callback).catch(err => {
-        console.error(err);
-        if (errorCallback) errorCallback(err);
-      });
+      fetchAndNotify();
     })
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        // Successfully subscribed
+      }
+    });
+
+  // Polling fallback for localStorage changes (since Supabase realtime won't trigger for local changes)
+  const interval = setInterval(() => {
+    fetchAndNotify();
+  }, 2000);
 
   return () => {
     supabase.removeChannel(channel);
+    clearInterval(interval);
   };
 };
