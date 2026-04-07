@@ -2,17 +2,16 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
-import app from "./src/server/app";
+import app from "./src/server/app.js";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 async function startServer() {
-  // Vite middleware for development (if needed for frontend integration)
   if (process.env.NODE_ENV !== "production") {
     try {
       const { createServer: createViteServer } = await import("vite");
@@ -33,8 +32,8 @@ async function startServer() {
     });
   }
 
-  app.listen(Number(PORT), "0.0.0.0", () => {
-    console.log(`[Server] Dijilla Backend running on http://localhost:${PORT}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`[Server] Dijilla Backend running on http://0.0.0.0:${PORT}`);
   });
 }
 

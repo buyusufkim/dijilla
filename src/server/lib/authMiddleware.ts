@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { supabaseAdmin } from "./supabase";
+import { supabaseAdmin } from "./supabase.js";
 
 export interface AuthRequest extends Request {
   user?: {

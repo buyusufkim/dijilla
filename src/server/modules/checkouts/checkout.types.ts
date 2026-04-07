@@ -1,4 +1,4 @@
-import { Database } from "../../types";
+import { Database } from "../../types.js";
 
 export type Checkout = Database["public"]["Tables"]["checkouts"]["Row"];
 export type CheckoutInsert = Database["public"]["Tables"]["checkouts"]["Insert"];

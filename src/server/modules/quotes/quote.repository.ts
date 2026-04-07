@@ -1,5 +1,5 @@
-import { supabaseAdmin } from "../../lib/supabase";
-import { QuoteRequest, QuoteRequestInsert, NormalizedOffer, QuoteStatus } from "./quote.types";
+import { supabaseAdmin } from "../../lib/supabase.js";
+import { QuoteRequest, QuoteRequestInsert, NormalizedOffer, QuoteStatus } from "./quote.types.js";
 
 /**
  * Quote Repository

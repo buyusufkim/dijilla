@@ -1,6 +1,6 @@
-import { supabaseAdmin } from "../../lib/supabase";
-import { Checkout } from "../checkouts/checkout.types";
-import { PolicyDTO } from "../../types";
+import { supabaseAdmin } from "../../lib/supabase.js";
+import { Checkout } from "../checkouts/checkout.types.js";
+import { PolicyDTO } from "../../types.js";
 
 export class PolicyService {
   /**

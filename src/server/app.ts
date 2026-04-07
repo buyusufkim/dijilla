@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
-import quotesRouter from "./routes/quotes.routes";
-import checkoutsRouter from "./routes/checkouts.routes";
+import quotesRouter from "./routes/quotes.routes.js";
+import checkoutsRouter from "./routes/checkouts.routes.js";
 
 const app = express();
 
@@ -16,8 +16,8 @@ app.get("/api/health", (req: Request, res: Response) => {
 app.use("/api/quotes", quotesRouter);
 app.use("/api/checkouts", checkoutsRouter);
 
-// 404 Handler
-app.use((req: Request, res: Response) => {
+// 404 Handler for API routes
+app.use("/api", (req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     error: { message: "İstenen kaynak bulunamadı." }

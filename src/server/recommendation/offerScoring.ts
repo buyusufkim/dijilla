@@ -1,4 +1,4 @@
-import { NormalizedOffer } from "../modules/quotes/quote.types";
+import { NormalizedOffer } from "../modules/quotes/quote.types.js";
 
 /**
  * Offer Scoring & Ranking Logic

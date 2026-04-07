@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
-import { CheckoutService } from "../modules/checkouts/checkout.service";
-import { createCheckoutSchema, paymentSchema } from "../modules/checkouts/checkout.schemas";
-import { ApiResponse } from "../types";
-import { authMiddleware, AuthRequest } from "../lib/authMiddleware";
+import { CheckoutService } from "../modules/checkouts/checkout.service.js";
+import { createCheckoutSchema, paymentSchema } from "../modules/checkouts/checkout.schemas.js";
+import { ApiResponse } from "../types.js";
+import { authMiddleware, AuthRequest } from "../lib/authMiddleware.js";
 
 const router = Router();
 const checkoutService = new CheckoutService();

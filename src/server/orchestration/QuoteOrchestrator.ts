@@ -1,8 +1,8 @@
-import { supabaseAdmin } from "../lib/supabase";
-import { QuoteRequest, NormalizedOffer, QuoteStatus } from "../modules/quotes/quote.types";
-import { BaseProviderAdapter } from "../providers/adapters/BaseProviderAdapter";
-import { FakeTrafficProviderAdapter } from "../providers/adapters/FakeTrafficProviderAdapter";
-import { FakeCascoProviderAdapter } from "../providers/adapters/FakeCascoProviderAdapter";
+import { supabaseAdmin } from "../lib/supabase.js";
+import { QuoteRequest, NormalizedOffer, QuoteStatus } from "../modules/quotes/quote.types.js";
+import { BaseProviderAdapter } from "../providers/adapters/BaseProviderAdapter.js";
+import { FakeTrafficProviderAdapter } from "../providers/adapters/FakeTrafficProviderAdapter.js";
+import { FakeCascoProviderAdapter } from "../providers/adapters/FakeCascoProviderAdapter.js";
 
 /**
  * Quote Orchestrator

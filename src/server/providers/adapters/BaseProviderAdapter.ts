@@ -1,5 +1,5 @@
-import { QuoteRequest, NormalizedOffer, QuoteStatus } from "../../modules/quotes/quote.types";
-import { IProviderAdapter } from "../../types";
+import { QuoteRequest, NormalizedOffer, QuoteStatus } from "../../modules/quotes/quote.types.js";
+import { IProviderAdapter } from "../../types.js";
 
 /**
  * Base Provider Adapter

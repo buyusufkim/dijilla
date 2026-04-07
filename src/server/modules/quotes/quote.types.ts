@@ -1,4 +1,4 @@
-import { Database } from "../../types";
+import { Database } from "../../types.js";
 
 export type QuoteRequest = Database["public"]["Tables"]["quote_requests"]["Row"];
 export type QuoteRequestInsert = Database["public"]["Tables"]["quote_requests"]["Insert"];

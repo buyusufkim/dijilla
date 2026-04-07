@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { Database } from "../types";
+import { Database } from "../types.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -11,13 +11,28 @@ if (!supabaseUrl || !supabaseKey) {
   console.warn("Supabase credentials missing. Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set.");
 }
 
-/**
- * Supabase Admin Client
- * Used for server-side operations that bypass RLS or require elevated privileges.
- */
-export const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
+let supabaseAdminInstance: any = null;
+
+export const getSupabaseAdmin = () => {
+  if (supabaseAdminInstance) return supabaseAdminInstance;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Supabase credentials missing. Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set.");
+  }
+
+  supabaseAdminInstance = createClient<Database>(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+
+  return supabaseAdminInstance;
+};
+
+// For backward compatibility if needed, but we should use the getter
+export const supabaseAdmin = new Proxy({} as any, {
+  get: (target, prop) => {
+    return getSupabaseAdmin()[prop];
   }
 });

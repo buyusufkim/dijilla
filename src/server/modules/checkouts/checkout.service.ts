@@ -1,6 +1,6 @@
-import { CheckoutRepository } from "./checkout.repository";
-import { CreateCheckoutInput, PaymentInput, CheckoutStatus, CheckoutResponseDTO } from "./checkout.types";
-import { PolicyService } from "../policies/policy.service";
+import { CheckoutRepository } from "./checkout.repository.js";
+import { CreateCheckoutInput, PaymentInput, CheckoutStatus, CheckoutResponseDTO } from "./checkout.types.js";
+import { PolicyService } from "../policies/policy.service.js";
 
 export class CheckoutService {
   private repository = new CheckoutRepository();

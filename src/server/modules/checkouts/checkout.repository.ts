@@ -1,5 +1,5 @@
-import { supabaseAdmin } from "../../lib/supabase";
-import { Checkout, CheckoutInsert, CheckoutStatus } from "./checkout.types";
+import { supabaseAdmin } from "../../lib/supabase.js";
+import { Checkout, CheckoutInsert, CheckoutStatus } from "./checkout.types.js";
 
 export class CheckoutRepository {
   async createCheckout(data: CheckoutInsert): Promise<Checkout> {

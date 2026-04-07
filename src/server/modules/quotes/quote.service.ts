@@ -1,8 +1,8 @@
-import { QuoteRepository } from "./quote.repository";
-import { QuoteRequestDTO, QuoteResponseDTO, QuoteStatus, OfferDTO } from "./quote.types";
-import { QuoteOrchestrator } from "../../orchestration/QuoteOrchestrator";
-import { OfferScoring } from "../../recommendation/offerScoring";
-import { supabaseAdmin } from "../../lib/supabase";
+import { QuoteRepository } from "./quote.repository.js";
+import { QuoteRequestDTO, QuoteResponseDTO, QuoteStatus, OfferDTO } from "./quote.types.js";
+import { QuoteOrchestrator } from "../../orchestration/QuoteOrchestrator.js";
+import { OfferScoring } from "../../recommendation/offerScoring.js";
+import { supabaseAdmin } from "../../lib/supabase.js";
 
 /**
  * Quote Service

@@ -1,5 +1,5 @@
-import { BaseProviderAdapter } from "./BaseProviderAdapter";
-import { QuoteRequest, NormalizedOffer } from "../../modules/quotes/quote.types";
+import { BaseProviderAdapter } from "./BaseProviderAdapter.js";
+import { QuoteRequest, NormalizedOffer } from "../../modules/quotes/quote.types.js";
 
 export class FakeTrafficProviderAdapter extends BaseProviderAdapter {
   providerId = "traffic-fake-001";

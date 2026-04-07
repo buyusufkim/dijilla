@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
-import { QuoteService } from "../modules/quotes/quote.service";
-import { quoteRequestSchema } from "../modules/quotes/quote.schemas";
-import { ApiResponse } from "../types";
-import { authMiddleware, AuthRequest } from "../lib/authMiddleware";
+import { QuoteService } from "../modules/quotes/quote.service.js";
+import { quoteRequestSchema } from "../modules/quotes/quote.schemas.js";
+import { ApiResponse } from "../types.js";
+import { authMiddleware, AuthRequest } from "../lib/authMiddleware.js";
 
 const router = Router();
 const quoteService = new QuoteService();
