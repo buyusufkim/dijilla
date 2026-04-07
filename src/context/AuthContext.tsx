@@ -61,17 +61,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Update profile
-      await updateProfile(user, { displayName: fullName });
+      if (user) {
+        // Update profile - we wrap this in try/catch because if email confirmation is on,
+        // session might not be available yet, and we don't want to block the flow.
+        try {
+          await updateProfile(user, { displayName: fullName });
+        } catch (e) {
+          console.warn("Profil güncellenemedi (oturum henüz hazır olmayabilir):", e);
+        }
 
-      // Create profile document in Firestore
-      await setDoc(doc(db, 'profiles', user.uid), {
-        id: user.uid,
-        full_name: fullName,
-        email: email,
-        points: 0,
-        created_at: new Date().toISOString()
-      });
+        // Create profile document in Firestore - this might also fail if RLS is on and no session
+        // but the adapter will fallback to localStorage.
+        try {
+          await setDoc(doc(db, 'profiles', user.uid), {
+            id: user.uid,
+            full_name: fullName,
+            email: email,
+            points: 0,
+            created_at: new Date().toISOString()
+          });
+        } catch (e) {
+          console.warn("Profil dokümanı oluşturulamadı (yerel depolamaya kaydediliyor olabilir):", e);
+        }
+      }
 
       setLoading(false);
       return { error: null };
@@ -107,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { seedDemoData } = await import('@/lib/seed');
         await seedDemoData(user.uid);
       } catch (e: any) {
-        console.error("Demo login failed", e);
+        console.error("Demo girişi başarısız", e);
         // If user already exists but password was wrong, or trigger failed, we might still be able to login if we reset or just show error
         if (e.message?.includes('already registered')) {
            // Try one more time to login, maybe it was a race condition

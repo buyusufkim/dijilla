@@ -111,22 +111,22 @@ export default function Home() {
   const displayName = profile?.full_name?.split(" ")[0] || user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || activeMember.name.split(" ")[0];
 
   return (
-    <div className="flex flex-col gap-8 pb-12">
+    <div className="flex flex-col gap-8 pb-12 w-full overflow-x-hidden">
       {/* Header */}
-      <header className="flex justify-between items-start mt-4 relative">
-        <div>
-          <h1 className="text-3xl font-bold text-white/90">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 relative">
+        <div className="w-full sm:w-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white/90 truncate">
             Günaydın {displayName},
           </h1>
           <div className="flex items-center gap-2 mt-2 text-white/60">
-            <CloudRain className="w-5 h-5 text-[#00E5FF]" />
-            <span className="text-base">
+            <CloudRain className="w-5 h-5 text-[#00E5FF] shrink-0" />
+            <span className="text-sm sm:text-base">
               Yollar bugün açık, hafif yağmurlu.
             </span>
           </div>
         </div>
         
-        <div className="relative" ref={notificationRef}>
+        <div className="relative self-end sm:self-auto" ref={notificationRef}>
           <button 
             onClick={() => setShowNotifications(!showNotifications)}
             className="relative p-3 bg-[#1A233A] rounded-xl border border-white/10 hover:bg-white/5 transition-colors"

@@ -12,15 +12,24 @@ import {
   Fuel,
   BarChart3,
   Bot,
-  Loader2
+  Loader2,
+  AlertTriangle,
+  Wrench,
+  Bell,
+  ShieldAlert,
+  Zap,
+  ArrowRight,
+  Crown
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useFamily } from "@/context/FamilyContext";
+import { useNotifications } from "@/context/NotificationContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase";
 import { collection, query, where, onSnapshot, addDoc, orderBy, serverTimestamp } from "@/firebase";
+import { calculateRisk } from "@/lib/risk-engine";
 
 type Vehicle = {
   id: string;
@@ -29,7 +38,7 @@ type Vehicle = {
   brand?: string;
   model?: string;
   year: number;
-  fuel_type?: string;
+  mileage?: number;
   insurance_expiry: string;
   inspection_expiry: string;
   tax_status: string;
@@ -43,6 +52,7 @@ type HomeAsset = {
 
 export default function Garage() {
   const { activeMember } = useFamily();
+  const { addNotification } = useNotifications();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isAddingAsset, setIsAddingAsset] = useState(false);
@@ -53,9 +63,13 @@ export default function Garage() {
   const [model, setModel] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
   const [fuelType, setFuelType] = useState("Benzin");
+  const [mileage, setMileage] = useState(0);
+  const [inspectionExpiry, setInspectionExpiry] = useState(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+  const [setReminder, setSetReminder] = useState(true);
   
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [homes, setHomes] = useState<HomeAsset[]>([]);
+  const [maintenanceRecords, setMaintenanceRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -99,9 +113,26 @@ export default function Garage() {
       console.error("Error fetching homes:", error);
     });
 
+    const qMaintenance = query(
+      collection(db, "maintenance_records"),
+      where("user_id", "==", user.uid),
+      orderBy("date", "desc")
+    );
+
+    const unsubscribeMaintenance = onSnapshot(qMaintenance, (snapshot) => {
+      const records = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setMaintenanceRecords(records);
+    }, (error) => {
+      console.error("Error fetching maintenance:", error);
+    });
+
     return () => {
       unsubscribeVehicles();
       unsubscribeHomes();
+      unsubscribeMaintenance();
     };
   }, [user]);
 
@@ -119,12 +150,21 @@ export default function Garage() {
           brand: brand,
           model: model,
           year: Number(year),
+          mileage: Number(mileage),
           fuel_type: fuelType,
           insurance_expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 year from now
-          inspection_expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          inspection_expiry: inspectionExpiry,
           tax_status: 'Ödendi',
           created_at: serverTimestamp()
         });
+
+        if (setReminder) {
+          addNotification({
+            title: "Muayene Hatırlatıcısı Kuruldu",
+            message: `${assetName} plakalı aracınızın muayenesi için hatırlatıcı ayarlandı.`,
+            type: "info"
+          });
+        }
 
         setIsAddingAsset(false);
         setAssetName("");
@@ -132,6 +172,8 @@ export default function Garage() {
         setModel("");
         setYear(new Date().getFullYear());
         setFuelType("Benzin");
+        setMileage(0);
+        setInspectionExpiry(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
       } catch (error) {
         console.error('Error adding vehicle:', error);
       } finally {
@@ -169,20 +211,64 @@ export default function Garage() {
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-12 relative">
-      <header className="flex justify-between items-center">
+    <div className="flex flex-col gap-8 pb-12 relative w-full overflow-x-hidden">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
-            Varlıklarım
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+            Dijilla Finansal Garaj
           </h1>
-          <p className="text-white/60">
-            {activeMember.name} adına kayıtlı araç ve konutlar.
+          <p className="text-white/60 text-sm sm:text-base">
+            Varlıklarınızı yönetin, risklerinizi minimize edin.
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setIsAddingAsset(true)}>
+        <Button className="w-full sm:w-auto gap-2 bg-[#00E5FF] text-[#0A1128] hover:bg-[#00B8D4] font-bold" onClick={() => setIsAddingAsset(true)}>
           <Plus className="w-5 h-5" /> Yeni Varlık Ekle
         </Button>
       </header>
+
+      {/* Premium Pitch Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        onClick={() => navigate('/premium')}
+        className="bg-gradient-to-r from-[#FFD600] to-[#FFA000] p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] flex flex-col sm:flex-row items-center justify-between cursor-pointer group shadow-2xl shadow-[#FFD600]/10 gap-4"
+      >
+        <div className="flex items-center gap-3 sm:gap-5">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-black rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl shrink-0">
+            <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-[#FFD600]" />
+          </div>
+          <div>
+            <h3 className="text-black font-black text-lg sm:text-xl tracking-tighter">Dijilla Premium</h3>
+            <p className="text-black/60 text-xs sm:text-sm font-bold">Aracınız için asla endişelenmeyin.</p>
+          </div>
+        </div>
+        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-black/10 rounded-full flex items-center justify-center group-hover:bg-black/20 transition-colors">
+          <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
+        </div>
+      </motion.div>
+
+      {/* Monetization Banner */}
+      {vehicles.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => navigate(`/insurance-purchase/${vehicles[0].id}`)}
+          className="bg-gradient-to-r from-[#FFD600] to-[#FFA000] p-4 rounded-[1.5rem] sm:rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-[#FFD600]/20 cursor-pointer group"
+        >
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+              <Zap className="w-6 h-6 text-[#0A1128]" />
+            </div>
+            <div>
+              <h4 className="font-bold text-[#0A1128] text-base sm:text-lg">Sigortada %25 İndirim Fırsatı!</h4>
+              <p className="text-[#0A1128]/80 text-xs sm:text-sm">Poliçenizi Dijilla güvencesiyle hemen yenileyin.</p>
+            </div>
+          </div>
+          <Button className="w-full sm:w-auto bg-[#0A1128] text-white hover:bg-black font-bold gap-2 whitespace-nowrap">
+            Teklif Al <ArrowRight className="w-4 h-4" />
+          </Button>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Vehicles */}
@@ -207,15 +293,52 @@ export default function Garage() {
             </Card>
           ) : (
             <>
-              {vehicles.map((vehicle) => (
-                <Card key={vehicle.id} className="bg-gradient-to-br from-[#1A233A] to-[#0A1128] border-[#00E5FF]/30 relative overflow-hidden group cursor-pointer mb-4">
+              {vehicles.map((vehicle) => {
+                const daysToInsurance = calculateDaysLeft(vehicle.insurance_expiry);
+                const isInsuranceWarning = daysToInsurance <= 30;
+                const latestMaintenance = maintenanceRecords.find(m => m.vehicle_id === vehicle.id);
+                const risk = calculateRisk(vehicle);
+
+                return (
+                <Card 
+                  key={vehicle.id} 
+                  onClick={() => navigate(`/garage/${vehicle.id}`)}
+                  className="bg-gradient-to-br from-[#1A233A] to-[#0A1128] border-[#00E5FF]/30 relative overflow-hidden group cursor-pointer mb-4"
+                >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-[#00E5FF]/10 rounded-full blur-2xl group-hover:bg-[#00E5FF]/20 transition-colors"></div>
                   <CardContent className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00E676]/20 text-[#00E676] text-xs font-medium mb-3 border border-[#00E676]/30">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          Kasko Aktif
+                        <div className="flex gap-2 mb-3">
+                          {isInsuranceWarning ? (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFD600]/20 text-[#FFD600] text-[10px] font-bold border border-[#FFD600]/30">
+                              <AlertTriangle className="w-3 h-3" />
+                              Kasko ({daysToInsurance} gün)
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00E676]/20 text-[#00E676] text-[10px] font-bold border border-[#00E676]/30">
+                              <ShieldCheck className="w-3 h-3" />
+                              Kasko Aktif
+                            </div>
+                          )}
+                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                            (100 - risk.healthScore) > 70 ? 'bg-red-500/20 text-red-500 border-red-500/30' : 
+                            (100 - risk.healthScore) > 40 ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' : 
+                            'bg-green-500/20 text-green-500 border-green-500/30'
+                          }`}>
+                            <ShieldAlert className="w-3 h-3" />
+                            Risk: {100 - risk.healthScore}
+                          </div>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/protection/${vehicle.id}`);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FF3D00]/20 text-[#FF3D00] text-[10px] font-bold border border-[#FF3D00]/30 hover:bg-[#FF3D00]/30 transition-colors"
+                          >
+                            <Zap className="w-3 h-3" />
+                            Koru
+                          </button>
                         </div>
                         <h2 className="text-2xl font-bold tracking-tight">
                           {vehicle.plate}
@@ -228,7 +351,31 @@ export default function Garage() {
                         <Car className="w-8 h-8 text-[#00E5FF]" />
                       </div>
                     </div>
-                    <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-2">
+
+                    {/* Maintenance Section */}
+                    <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#FFD600]/10 flex items-center justify-center">
+                          <Wrench className="w-4 h-4 text-[#FFD600]" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-white/40">Son Bakım</p>
+                          <p className="text-sm font-medium">
+                            {latestMaintenance ? `${latestMaintenance.service_type} (${new Date(latestMaintenance.date).toLocaleDateString('tr-TR')})` : "Kayıt Yok"}
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={(e) => { e.stopPropagation(); navigate('/maintenance'); }}
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 px-2 text-[#00E5FF] hover:bg-[#00E5FF]/10"
+                      >
+                        <Plus className="w-4 h-4 mr-1" /> Ekle
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-4">
                       <span className="text-sm text-white/60">
                         Detayları Görüntüle
                       </span>
@@ -267,7 +414,8 @@ export default function Garage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
               <Card 
                 className="bg-[#1A233A]/50 border-dashed border-2 border-white/10 hover:border-white/20 transition-colors cursor-pointer"
                 onClick={() => { setAssetType("vehicle"); setIsAddingAsset(true); }}
@@ -417,6 +565,27 @@ export default function Garage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
+                          <label className="text-sm font-medium text-white/80">Kilometre</label>
+                          <input
+                            type="number"
+                            value={mileage}
+                            onChange={(e) => setMileage(Number(e.target.value))}
+                            placeholder="Örn: 45000"
+                            className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/50 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-white/80">Muayene Tarihi</label>
+                          <input
+                            type="date"
+                            value={inspectionExpiry}
+                            onChange={(e) => setInspectionExpiry(e.target.value)}
+                            className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/50 transition-all"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
                           <label className="text-sm font-medium text-white/80">Yıl</label>
                           <input
                             type="number"
@@ -440,6 +609,19 @@ export default function Garage() {
                             <option value="Hibrit">Hibrit</option>
                           </select>
                         </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <input 
+                          type="checkbox" 
+                          id="setReminder" 
+                          checked={setReminder}
+                          onChange={(e) => setSetReminder(e.target.checked)}
+                          className="w-4 h-4 rounded border-white/10 bg-[#0A1128] text-[#00E5FF] focus:ring-[#00E5FF]/50"
+                        />
+                        <label htmlFor="setReminder" className="text-sm text-white/80 flex items-center gap-1">
+                          <Bell className="w-3 h-3 text-[#FFD600]" />
+                          Muayene hatırlatıcısı kur
+                        </label>
                       </div>
                     </>
                   ) : (

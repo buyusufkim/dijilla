@@ -161,6 +161,14 @@ service cloud.firestore {
       allow delete: if isDocOwner();
     }
 
+    // Reminders
+    match /reminders/{reminderId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.user_id == request.auth.uid);
+      allow create: if isRequestOwner();
+      allow update: if isDocOwner() && isRequestOwner();
+      allow delete: if isDocOwner();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

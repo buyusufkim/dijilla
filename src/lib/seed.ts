@@ -128,8 +128,8 @@ export const seedDemoData = async (userId: string) => {
       }
     ]);
 
-    console.log("Demo data seeded successfully!");
+    console.log("Demo verileri başarıyla yüklendi!");
   } catch (error) {
-    console.error("Error seeding demo data:", error);
+    console.error("Demo verileri yüklenirken hata oluştu:", error);
   }
 };

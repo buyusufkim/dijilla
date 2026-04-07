@@ -110,14 +110,16 @@ export default function Profile() {
   const displayName = profile?.full_name || user?.displayName || user?.email?.split("@")[0];
 
   return (
-    <div className="flex flex-col gap-8 pb-12 relative">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight mb-2">
-          Ailem & Profil
-        </h1>
-        <p className="text-white/60">
-          Kendi profilinizi ve aile üyelerinizi yönetin.
-        </p>
+    <div className="flex flex-col gap-8 pb-12 relative w-full overflow-x-hidden">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+            Ailem & Profil
+          </h1>
+          <p className="text-white/60 text-sm sm:text-base">
+            Kendi profilinizi ve aile üyelerinizi yönetin.
+          </p>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

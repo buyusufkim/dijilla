@@ -445,18 +445,18 @@ export default function Services() {
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-12 relative">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="flex flex-col gap-8 pb-12 relative w-full overflow-x-hidden">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
             Hizmetler Merkezi
           </h1>
-          <p className="text-white/60">
+          <p className="text-white/60 text-sm sm:text-base">
             İhtiyacınız olan tüm hizmetlere hızlıca erişin.
           </p>
         </div>
 
-        <div className="relative w-full md:w-96">
+        <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
           <input
             type="text"

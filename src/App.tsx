@@ -23,6 +23,11 @@ import Expenses from "./pages/Expenses";
 import Maintenance from "./pages/Maintenance";
 import TravelAdvisor from "./pages/TravelAdvisor";
 
+import VehicleDetail from "./pages/VehicleDetail";
+import ProtectionDashboard from "./pages/ProtectionDashboard";
+import InsurancePurchase from "./pages/InsurancePurchase";
+import PremiumPitch from "./pages/PremiumPitch";
+
 export default function App() {
   return (
     <AuthProvider>
@@ -37,6 +42,10 @@ export default function App() {
                 <Route path="services" element={<Services />} />
                 <Route path="sos" element={<SOS />} />
                 <Route path="garage" element={<Garage />} />
+                <Route path="garage/:id" element={<VehicleDetail />} />
+                <Route path="protection/:id" element={<ProtectionDashboard />} />
+                <Route path="insurance-purchase/:id" element={<InsurancePurchase />} />
+                <Route path="premium" element={<PremiumPitch />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="ai-assistant" element={<AIAssistant />} />
                 <Route path="tow-truck" element={<TowTruck />} />

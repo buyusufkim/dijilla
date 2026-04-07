@@ -1,6 +1,6 @@
 {
   "name": "Dijilla",
-  "description": "A premium, AI-powered roadside assistance and vehicle management application.",
+  "description": "High-conversion automotive financial assistant. Risk analysis, insurance triggers, and roadside assistance monetization.",
   "requestFramePermissions": [
     "geolocation",
     "camera"

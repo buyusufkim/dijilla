@@ -32,6 +32,7 @@
         "plate": { "type": "string", "description": "The vehicle's license plate." },
         "brand_model": { "type": "string", "description": "The brand and model of the vehicle." },
         "year": { "type": "number", "description": "The manufacturing year." },
+        "mileage": { "type": "number", "description": "Current mileage of the vehicle." },
         "insurance_expiry": { "type": "string", "format": "date", "description": "Expiry date of the insurance." },
         "inspection_expiry": { "type": "string", "format": "date", "description": "Expiry date of the inspection." },
         "tax_status": { "type": "string", "description": "Status of the motor vehicle tax." },
@@ -118,6 +119,21 @@
         "created_at": { "type": "string", "format": "date-time" }
       },
       "required": ["user_id", "vehicle_id", "service_type", "appointment_date", "status"]
+    },
+    "Reminder": {
+      "title": "Reminder",
+      "description": "A custom reminder for a vehicle.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "vehicle_id": { "type": "string" },
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "completed": { "type": "boolean" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["user_id", "vehicle_id", "title", "date"]
     }
   },
   "firestore": {
@@ -148,6 +164,10 @@
     "/maintenance_appointments/{appointmentId}": {
       "schema": "MaintenanceAppointment",
       "description": "Scheduled maintenance appointments."
+    },
+    "/reminders/{reminderId}": {
+      "schema": "Reminder",
+      "description": "Custom user reminders."
     }
   }
 }
