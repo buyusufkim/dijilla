@@ -1,5 +1,11 @@
 import { supabase } from '../supabase';
 
+const isSupabaseConfigured = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+
+if (!isSupabaseConfigured) {
+  console.warn("Supabase configuration is missing. Auth and database operations will fail or fallback to localStorage.");
+}
+
 // --- AUTH ADAPTER ---
 export type User = {
   uid: string;
@@ -51,12 +57,24 @@ export const onAuthStateChanged = (authInstance: any, callback: (user: User | nu
 };
 
 export const signInWithEmailAndPassword = async (authInstance: any, email: string, password: string) => {
+  if (!isSupabaseConfigured && email.includes('dijilla.com')) {
+    console.log("Supabase not configured, using mock login for demo.");
+    const mockUser = { uid: 'mock-user-123', email, displayName: 'Ahmet Yılmaz', photoURL: null };
+    auth.currentUser = mockUser;
+    return { user: mockUser };
+  }
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return { user: { uid: data.user.id, email: data.user.email, displayName: data.user.user_metadata?.full_name || null, photoURL: data.user.user_metadata?.avatar_url || null } };
 };
 
 export const createUserWithEmailAndPassword = async (authInstance: any, email: string, password: string) => {
+  if (!isSupabaseConfigured && email.includes('dijilla.com')) {
+    console.log("Supabase not configured, using mock signup for demo.");
+    const mockUser = { uid: 'mock-user-123', email, displayName: null, photoURL: null };
+    auth.currentUser = mockUser;
+    return { user: mockUser };
+  }
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
   return { user: { uid: data.user!.id, email: data.user!.email, displayName: null, photoURL: null } };

@@ -99,18 +99,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const demoLogin = async () => {
     setLoading(true);
+    const demoEmail = 'ahmet.yilmaz@dijilla.com';
+    const demoPassword = 'demo123456';
+    
     try {
       // Try to login with demo user
-      await signInWithEmailAndPassword(auth, 'ahmet@example.com', 'demo123456');
+      await signInWithEmailAndPassword(auth, demoEmail, demoPassword);
     } catch (error: any) {
       // If it fails, check if it's invalid credentials or user not found
       try {
-        const { user } = await createUserWithEmailAndPassword(auth, 'ahmet@example.com', 'demo123456');
+        const { user } = await createUserWithEmailAndPassword(auth, demoEmail, demoPassword);
         await updateProfile(user, { displayName: 'Ahmet Yılmaz' });
         await setDoc(doc(db, 'profiles', user.uid), {
           id: user.uid,
           full_name: 'Ahmet Yılmaz',
-          email: 'ahmet@example.com',
+          email: demoEmail,
           points: 1500,
           created_at: new Date().toISOString()
         });
@@ -123,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If user already exists but password was wrong, or trigger failed, we might still be able to login if we reset or just show error
         if (e.message?.includes('already registered')) {
            // Try one more time to login, maybe it was a race condition
-           await signInWithEmailAndPassword(auth, 'ahmet@example.com', 'demo123456').catch(console.error);
+           await signInWithEmailAndPassword(auth, demoEmail, demoPassword).catch(console.error);
         }
       }
     }

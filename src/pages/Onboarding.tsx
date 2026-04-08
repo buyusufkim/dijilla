@@ -9,7 +9,8 @@ import {
   Mail,
   Lock,
   User,
-  Loader2
+  Loader2,
+  Sparkles
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -193,20 +194,33 @@ export default function Onboarding() {
                   </Button>
                   
                   {isLogin && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={loading}
-                      onClick={async () => {
-                        setLoading(true);
-                        await demoLogin();
-                        setLoading(false);
-                        navigate("/home");
-                      }}
-                      className="w-full border-white/10 text-white hover:bg-white/5 py-6 rounded-xl mt-2"
-                    >
-                      Demo Hesabı ile Giriş Yap
-                    </Button>
+                    <>
+                      <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-white/10"></div>
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-[#1A233A] px-2 text-white/40">Veya</span>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={loading}
+                        onClick={async () => {
+                          setLoading(true);
+                          await demoLogin();
+                          setLoading(false);
+                          navigate("/home");
+                        }}
+                        className="w-full border-[#00E5FF]/20 text-[#00E5FF] hover:bg-[#00E5FF]/10 py-6 rounded-xl transition-all group relative overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#00E5FF]/0 via-[#00E5FF]/5 to-[#00E5FF]/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Hızlı Keşfet: Demo Hesabı
+                      </Button>
+                    </>
                   )}
                 </form>
 
