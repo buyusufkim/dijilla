@@ -156,11 +156,7 @@ export default function TravelAdvisor() {
     setGroundingLinks([]);
     
     try {
-      const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY!);
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        tools: [{ googleMaps: {} }] 
-      });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
       const prompt = `Plan a route from ${startLocation} to ${endLocation} for a vehicle with these specs:
       Plate: ${selectedVehicle.plate}
@@ -179,9 +175,10 @@ export default function TravelAdvisor() {
       
       Return the response in JSON format.`;
 
-      const response = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: {
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -210,11 +207,12 @@ export default function TravelAdvisor() {
               }
             },
             required: ["distance", "totalKm", "duration", "trafficStatus", "fuelStatus", "estimatedCost", "averageFuelConsumption", "stops"]
-          }
+          },
+          tools: [{ googleSearch: {} }]
         }
       });
 
-      const result = JSON.parse(response.response.text() || "{}");
+      const result = JSON.parse(response.text || "{}");
       
       const stopsWithIcons = result.stops.map((stop: any) => {
         let icon = Coffee;
@@ -237,14 +235,14 @@ export default function TravelAdvisor() {
 
       setRoutePlan({ ...result, stops: stopsWithIcons });
       
-      const groundingMetadata = response.response.candidates?.[0]?.groundingMetadata;
+      const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
       const chunks = groundingMetadata?.groundingChunks;
       if (chunks) {
         const links = chunks
-          .filter((chunk: any) => chunk.maps?.uri)
+          .filter((chunk: any) => chunk.web?.uri)
           .map((chunk: any) => ({
-            uri: chunk.maps.uri,
-            title: chunk.maps.title
+            uri: chunk.web.uri,
+            title: chunk.web.title
           }));
         setGroundingLinks(links);
       }

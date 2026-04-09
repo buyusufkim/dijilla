@@ -155,11 +155,9 @@ export default function Glovebox() {
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dijital Torpido</h1>
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] rounded-xl gap-2 w-full sm:w-auto h-12 sm:h-10">
-              <Plus className="w-4 h-4" />
-              Ekle
-            </Button>
+          <DialogTrigger render={<Button className="bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] rounded-xl gap-2 w-full sm:w-auto h-12 sm:h-10" />}>
+            <Plus className="w-4 h-4" />
+            Ekle
           </DialogTrigger>
           <DialogContent className="bg-[#1A233A] text-white border-white/10 sm:max-w-[425px]">
             <DialogHeader>
