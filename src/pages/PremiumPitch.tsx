@@ -24,7 +24,7 @@ export default function PremiumPitch() {
     {
       icon: <BarChart3 className="w-6 h-6 text-[#00E5FF]" />,
       title: "Otomatik Takip",
-      description: "Tüm poliçe ve muayene tarihleriniz Dijilla tarafından otomatik izlenir."
+      description: "Tüm poliçe ve muayene tarihleriniz Droto tarafından otomatik izlenir."
     },
     {
       icon: <Bell className="w-6 h-6 text-[#FFD600]" />,
@@ -48,11 +48,11 @@ export default function PremiumPitch() {
       {/* Background Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-[#00E5FF]/10 blur-[120px] -z-10" />
 
-      <header className="p-6 flex items-center justify-between sticky top-0 bg-[#050505]/80 backdrop-blur-md z-50">
+      <header className="p-4 sm:p-6 flex items-center justify-between sticky top-0 bg-[#050505]/80 backdrop-blur-md z-50">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-          <ArrowLeft className="w-6 h-6" />
+          <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
-        <h1 className="text-lg font-bold tracking-tight">Dijilla Premium</h1>
+        <h1 className="text-sm sm:text-base sm:text-lg font-bold tracking-tight">Droto Premium</h1>
         <div className="w-10" />
       </header>
 
@@ -72,7 +72,7 @@ export default function PremiumPitch() {
               Aracınız İçin <br />
               <span className="text-[#FFD600]">Asla Endişelenmeyin</span>
             </h2>
-            <p className="text-white/40 font-medium">Dijilla Premium ile tam kontrol ve huzur elinizde.</p>
+            <p className="text-white/40 font-medium">Droto ile kontrol sende.</p>
           </div>
         </section>
 
@@ -156,7 +156,7 @@ export default function PremiumPitch() {
 
         {/* Footer Note */}
         <p className="text-center text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] pb-12">
-          Lüks deneyim ve tam huzur için Dijilla Premium.
+          Lüks deneyim ve tam huzur için Droto Premium.
         </p>
 
       </div>

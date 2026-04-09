@@ -3,7 +3,7 @@ import { QuoteRequest, NormalizedOffer } from "../../modules/quotes/quote.types.
 
 export class FakeTrafficProviderAdapter extends BaseProviderAdapter {
   providerId = "traffic-fake-001";
-  providerName = "Dijilla Trafik Sigorta";
+  providerName = "Droto Trafik Sigorta";
 
   async getQuotes(quoteRequest: QuoteRequest, vehicle: any): Promise<Partial<NormalizedOffer>[]> {
     // Simulate API delay

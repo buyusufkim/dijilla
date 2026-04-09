@@ -214,14 +214,14 @@ export default function Garage() {
     <div className="flex flex-col gap-8 pb-12 relative w-full overflow-x-hidden">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
-            Dijilla Finansal Garaj
+          <h1 className="text-xl sm:text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+            Droto Finansal Garaj
           </h1>
-          <p className="text-white/60 text-sm sm:text-base">
+          <p className="text-white/60 text-xs sm:text-sm sm:text-base">
             Varlıklarınızı yönetin, risklerinizi minimize edin.
           </p>
         </div>
-        <Button className="w-full sm:w-auto gap-2 bg-[#00E5FF] text-[#0A1128] hover:bg-[#00B8D4] font-bold" onClick={() => setIsAddingAsset(true)}>
+        <Button className="w-full sm:w-auto gap-2 bg-[#00E5FF] text-[#0A1128] hover:bg-[#00B8D4] font-bold h-12 sm:h-10" onClick={() => setIsAddingAsset(true)}>
           <Plus className="w-5 h-5" /> Yeni Varlık Ekle
         </Button>
       </header>
@@ -238,7 +238,7 @@ export default function Garage() {
             <Crown className="w-6 h-6 sm:w-8 sm:h-8 text-[#FFD600]" />
           </div>
           <div>
-            <h3 className="text-black font-black text-lg sm:text-xl tracking-tighter">Dijilla Premium</h3>
+            <h3 className="text-black font-black text-lg sm:text-xl tracking-tighter">Droto Premium</h3>
             <p className="text-black/60 text-xs sm:text-sm font-bold">Aracınız için asla endişelenmeyin.</p>
           </div>
         </div>
@@ -261,7 +261,7 @@ export default function Garage() {
             </div>
             <div>
               <h4 className="font-bold text-[#0A1128] text-base sm:text-lg">Sigortada %25 İndirim Fırsatı!</h4>
-              <p className="text-[#0A1128]/80 text-xs sm:text-sm">Poliçenizi Dijilla güvencesiyle hemen yenileyin.</p>
+              <p className="text-[#0A1128]/80 text-xs sm:text-sm">Poliçenizi Droto güvencesiyle hemen yenileyin.</p>
             </div>
           </div>
           <Button className="w-full sm:w-auto bg-[#0A1128] text-white hover:bg-black font-bold gap-2 whitespace-nowrap">
@@ -270,9 +270,9 @@ export default function Garage() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {/* Vehicles */}
-        <div className="space-y-6">
+        <div className="space-y-6 md:col-span-2 xl:col-span-2">
           <h2 className="text-xl font-semibold">Araçlar</h2>
           
           {loading ? (
@@ -292,7 +292,7 @@ export default function Garage() {
               </CardContent>
             </Card>
           ) : (
-            <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {vehicles.map((vehicle) => {
                 const daysToInsurance = calculateDaysLeft(vehicle.insurance_expiry);
                 const isInsuranceWarning = daysToInsurance <= 30;
@@ -303,13 +303,13 @@ export default function Garage() {
                 <Card 
                   key={vehicle.id} 
                   onClick={() => navigate(`/garage/${vehicle.id}`)}
-                  className="bg-gradient-to-br from-[#1A233A] to-[#0A1128] border-[#00E5FF]/30 relative overflow-hidden group cursor-pointer mb-4"
+                  className="bg-gradient-to-br from-[#1A233A] to-[#0A1128] border-[#00E5FF]/30 relative overflow-hidden group cursor-pointer h-full border border-transparent hover:border-[#00E5FF]/30 transition-colors"
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-[#00E5FF]/10 rounded-full blur-2xl group-hover:bg-[#00E5FF]/20 transition-colors"></div>
-                  <CardContent className="p-6">
+                  <CardContent className="p-6 flex flex-col h-full">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <div className="flex gap-2 mb-3">
+                        <div className="flex flex-wrap gap-2 mb-3">
                           {isInsuranceWarning ? (
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFD600]/20 text-[#FFD600] text-[10px] font-bold border border-[#FFD600]/30">
                               <AlertTriangle className="w-3 h-3" />
@@ -329,16 +329,6 @@ export default function Garage() {
                             <ShieldAlert className="w-3 h-3" />
                             Risk: {100 - risk.healthScore}
                           </div>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/protection/${vehicle.id}`);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FF3D00]/20 text-[#FF3D00] text-[10px] font-bold border border-[#FF3D00]/30 hover:bg-[#FF3D00]/30 transition-colors"
-                          >
-                            <Zap className="w-3 h-3" />
-                            Koru
-                          </button>
                         </div>
                         <h2 className="text-2xl font-bold tracking-tight">
                           {vehicle.plate}
@@ -347,7 +337,7 @@ export default function Garage() {
                           {vehicle.brand_model}
                         </p>
                       </div>
-                      <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+                      <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
                         <Car className="w-8 h-8 text-[#00E5FF]" />
                       </div>
                     </div>
@@ -355,13 +345,13 @@ export default function Garage() {
                     {/* Maintenance Section */}
                     <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#FFD600]/10 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-[#FFD600]/10 flex items-center justify-center shrink-0">
                           <Wrench className="w-4 h-4 text-[#FFD600]" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-xs text-white/40">Son Bakım</p>
-                          <p className="text-sm font-medium">
-                            {latestMaintenance ? `${latestMaintenance.service_type} (${new Date(latestMaintenance.date).toLocaleDateString('tr-TR')})` : "Kayıt Yok"}
+                          <p className="text-sm font-medium truncate">
+                            {latestMaintenance ? `${latestMaintenance.service_type}` : "Kayıt Yok"}
                           </p>
                         </div>
                       </div>
@@ -369,13 +359,13 @@ export default function Garage() {
                         onClick={(e) => { e.stopPropagation(); navigate('/maintenance'); }}
                         size="sm" 
                         variant="ghost" 
-                        className="h-8 px-2 text-[#00E5FF] hover:bg-[#00E5FF]/10"
+                        className="h-8 px-2 text-[#00E5FF] hover:bg-[#00E5FF]/10 shrink-0"
                       >
                         <Plus className="w-4 h-4 mr-1" /> Ekle
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-4">
+                    <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-auto">
                       <span className="text-sm text-white/60">
                         Detayları Görüntüle
                       </span>
@@ -417,7 +407,7 @@ export default function Garage() {
                 );
               })}
               <Card 
-                className="bg-[#1A233A]/50 border-dashed border-2 border-white/10 hover:border-white/20 transition-colors cursor-pointer"
+                className="bg-[#1A233A]/50 border-dashed border-2 border-white/10 hover:border-white/20 transition-colors cursor-pointer h-full flex items-center justify-center"
                 onClick={() => { setAssetType("vehicle"); setIsAddingAsset(true); }}
               >
                 <CardContent className="p-4 flex items-center justify-center text-center">
@@ -427,56 +417,57 @@ export default function Garage() {
                   </div>
                 </CardContent>
               </Card>
-            </>
+            </div>
           )}
         </div>
 
         {/* Real Estate */}
-        <div className="space-y-6">
+        <div className="space-y-6 md:col-span-2 xl:col-span-1">
           <h2 className="text-xl font-semibold">Konutlar</h2>
-          
-          {homes.map((home) => (
-            <Card key={home.id} className="bg-gradient-to-br from-[#1A233A] to-[#0A1128] border-purple-500/30 relative overflow-hidden group cursor-pointer mb-4">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors"></div>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium mb-3 border border-purple-500/30">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      DASK Aktif
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-6">
+            {homes.map((home) => (
+              <Card key={home.id} className="bg-gradient-to-br from-[#1A233A] to-[#0A1128] border-purple-500/30 relative overflow-hidden group cursor-pointer border border-transparent hover:border-purple-500/30 transition-colors">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-colors"></div>
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium mb-3 border border-purple-500/30">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        DASK Aktif
+                      </div>
+                      <h2 className="text-2xl font-bold tracking-tight">
+                        {home.name}
+                      </h2>
+                      <p className="text-white/50 text-sm mt-1">
+                        {home.address}
+                      </p>
                     </div>
-                    <h2 className="text-2xl font-bold tracking-tight">
-                      {home.name}
-                    </h2>
-                    <p className="text-white/50 text-sm mt-1">
-                      {home.address}
-                    </p>
+                    <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
+                      <Home className="w-8 h-8 text-purple-400" />
+                    </div>
                   </div>
-                  <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
-                    <Home className="w-8 h-8 text-purple-400" />
+                  <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-2">
+                    <span className="text-sm text-white/60">
+                      Detayları Görüntüle
+                    </span>
+                    <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
                   </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            <Card 
+              className="bg-[#1A233A]/50 border-dashed border-2 border-white/10 hover:border-white/20 transition-colors cursor-pointer"
+              onClick={() => { setAssetType("home"); setIsAddingAsset(true); }}
+            >
+              <CardContent className="p-8 flex flex-col items-center justify-center text-center h-full">
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                  <Plus className="w-8 h-8 text-white/40" />
                 </div>
-                <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-2">
-                  <span className="text-sm text-white/60">
-                    Detayları Görüntüle
-                  </span>
-                  <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
-                </div>
+                <h3 className="font-medium text-lg mb-2">Yeni Konut Ekle</h3>
               </CardContent>
             </Card>
-          ))}
-
-          <Card 
-            className="bg-[#1A233A]/50 border-dashed border-2 border-white/10 hover:border-white/20 transition-colors cursor-pointer"
-            onClick={() => { setAssetType("home"); setIsAddingAsset(true); }}
-          >
-            <CardContent className="p-8 flex flex-col items-center justify-center text-center h-full">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                <Plus className="w-8 h-8 text-white/40" />
-              </div>
-              <h3 className="font-medium text-lg mb-2">Yeni Konut Ekle</h3>
-            </CardContent>
-          </Card>
+          </div>
         </div>
       </div>
 

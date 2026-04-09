@@ -1,5 +1,5 @@
 /**
- * Dijilla High-Conversion Notification Service
+ * Droto High-Conversion Notification Service
  * Generates urgent, persuasive notifications within 12-word limit.
  */
 
@@ -9,14 +9,14 @@ export type NotificationTrigger =
   | 'high_spending' 
   | 'missed_maintenance';
 
-export interface DijillaNotification {
+export interface DrotoNotification {
   title: string;
   body: string;
   cta: string;
   link: string;
 }
 
-export function generateNotification(trigger: NotificationTrigger, data?: any): DijillaNotification {
+export function generateNotification(trigger: NotificationTrigger, data?: any): DrotoNotification {
   switch (trigger) {
     case 'insurance_expiry':
       return {
@@ -48,7 +48,7 @@ export function generateNotification(trigger: NotificationTrigger, data?: any): 
       };
     default:
       return {
-        title: "Dijilla Asistan",
+        title: "Droto Asistan",
         body: "Aracınızın finansal sağlığı için yeni bir güncelleme var.",
         cta: "İncele",
         link: "/garage"

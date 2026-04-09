@@ -95,7 +95,7 @@ export function calculateRisk(vehicle: {
         : "Aracınızın değerini korumak için şimdi harekete geçin.",
     persuasivePoints: [
       riskLevel === 'High' ? "Yol yardım paketi ile çekici maliyetinden ₺2.500 tasarruf edin." : "Düzenli bakım ile yakıt tüketimini %15'e kadar düşürün.",
-      "Dijilla özel indirimiyle kasko poliçenizde ₺1.200'ye varan avantaj sağlayın."
+      "Droto özel indirimiyle kasko poliçenizde ₺1.200'ye varan avantaj sağlayın."
     ]
   };
 
@@ -134,7 +134,7 @@ export function calculateRisk(vehicle: {
       id: 'ins_01',
       type: 'insurance',
       title: 'Kapsamlı Kasko Paketi',
-      description: 'En iyi fiyat garantisi ve Dijilla özel indirimiyle hemen yenileyin.',
+      description: 'En iyi fiyat garantisi ve Droto özel indirimiyle hemen yenileyin.',
       price: 4250,
       urgency: 'Fiyat Garantisi!',
       cta: 'Teklif Al'

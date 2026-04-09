@@ -121,16 +121,16 @@ export default function Expenses() {
   return (
     <div className="space-y-6 pb-24 relative">
       {/* Header */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
-          <h1 className="text-2xl font-bold tracking-tight">Gider Takibi</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Gider Takibi</h1>
         </div>
         <Button 
           onClick={() => setShowAddModal(true)}
-          className="bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] rounded-xl gap-2"
+          className="bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] rounded-xl gap-2 w-full sm:w-auto h-12 sm:h-10"
         >
           <Plus className="w-4 h-4" />
           Ekle

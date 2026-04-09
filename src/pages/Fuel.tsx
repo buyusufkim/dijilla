@@ -369,14 +369,14 @@ export default function Fuel() {
   return (
     <div className="space-y-6 pb-24">
       {/* Header */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
-          <h1 className="text-2xl font-bold tracking-tight">Yakıt & Şarj</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Yakıt & Şarj</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <button 
             onClick={() => {
               if ("geolocation" in navigator) {

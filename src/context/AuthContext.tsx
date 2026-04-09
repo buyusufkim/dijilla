@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const demoLogin = async () => {
     setLoading(true);
-    const demoEmail = 'ahmet.yilmaz@dijilla.com';
+    const demoEmail = 'ahmet.yilmaz@droto.com';
     const demoPassword = 'demo123456';
     
     try {

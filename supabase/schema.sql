@@ -1,5 +1,5 @@
 -- ==========================================
--- DIJILLA APP - SUPABASE POSTGRESQL SCHEMA
+-- DROTO APP - SUPABASE POSTGRESQL SCHEMA
 -- ==========================================
 
 -- 1. PROFILES TABLE (Kullanıcı Profilleri)

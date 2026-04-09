@@ -34,7 +34,7 @@ const OFFERS = [
   },
   {
     id: 'standard',
-    name: 'Dijilla Güvence',
+    name: 'Droto Güvence',
     price: 5200,
     highlight: true,
     coverage: 'Genişletilmiş Kasko + 7/24 Destek',
@@ -236,7 +236,7 @@ export default function InsurancePurchase() {
             </div>
             <div className="space-y-2">
               <h2 className="text-4xl font-black tracking-tighter">Tebrikler!</h2>
-              <p className="text-white/60">Aracınız artık Dijilla güvencesi altında.</p>
+              <p className="text-white/60">Aracınız artık Droto güvencesi altında.</p>
             </div>
             
             <Card className="bg-[#0A0A0A] border-white/5 p-6 rounded-3xl text-left space-y-4">
@@ -260,11 +260,11 @@ export default function InsurancePurchase() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white pb-24 font-sans">
-      <header className="p-6 flex items-center justify-between sticky top-0 bg-[#050505]/80 backdrop-blur-md z-50">
+      <header className="p-4 sm:p-6 flex items-center justify-between sticky top-0 bg-[#050505]/80 backdrop-blur-md z-50">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-          <ArrowLeft className="w-6 h-6" />
+          <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
-        <h1 className="text-lg font-bold tracking-tight">Sigorta Yenileme</h1>
+        <h1 className="text-sm sm:text-base sm:text-lg font-bold tracking-tight">Sigorta Yenileme</h1>
         <div className="w-10" />
       </header>
 

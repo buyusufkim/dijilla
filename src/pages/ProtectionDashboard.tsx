@@ -98,11 +98,11 @@ export default function ProtectionDashboard() {
   return (
     <div className="min-h-screen bg-[#050505] text-white pb-24 font-sans">
       {/* Header */}
-      <header className="p-6 flex items-center justify-between sticky top-0 bg-[#050505]/80 backdrop-blur-md z-50">
+      <header className="p-4 sm:p-6 flex items-center justify-between sticky top-0 bg-[#050505]/80 backdrop-blur-md z-50">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-          <ArrowLeft className="w-6 h-6" />
+          <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
-        <h1 className="text-lg font-bold tracking-tight">Dijilla Protection</h1>
+        <h1 className="text-sm sm:text-base sm:text-lg font-bold tracking-tight">Droto Protection</h1>
         <div className="w-10" /> {/* Spacer */}
       </header>
 

@@ -484,22 +484,22 @@ export default function Services() {
     <div className="flex flex-col gap-8 pb-12 relative w-full overflow-x-hidden">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+          <h1 className="text-xl sm:text-2xl sm:text-3xl font-bold tracking-tight mb-2">
             Hizmetler Merkezi
           </h1>
-          <p className="text-white/60 text-sm sm:text-base">
+          <p className="text-white/60 text-xs sm:text-sm sm:text-base">
             İhtiyacınız olan tüm hizmetlere hızlıca erişin.
           </p>
         </div>
 
         <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-white/40" />
           <input
             type="text"
             placeholder="Hizmet veya işlem ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#1A233A] border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00E5FF]/50 transition-all"
+            className="w-full bg-[#1A233A] border border-white/10 rounded-xl py-2.5 sm:py-3 pl-10 sm:pl-12 pr-4 text-sm sm:text-base text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#00E5FF]/50 transition-all"
           />
         </div>
       </header>
@@ -515,16 +515,16 @@ export default function Services() {
             <h2 className="text-lg font-medium text-white/80 mb-6">
               {category.title}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {category.items.map((item) => (
                 <Card
                   key={item.label}
                   onClick={() => handleServiceClick(item)}
-                  className="bg-[#1A233A] border-white/5 hover:border-white/20 transition-all cursor-pointer group"
+                  className="bg-[#1A233A] border-white/5 hover:border-white/20 transition-all cursor-pointer group h-full"
                 >
-                  <CardContent className="p-6">
+                  <CardContent className="p-6 flex flex-col h-full">
                     <div
-                      className={`w-14 h-14 rounded-xl flex items-center justify-center ${item.bg} mb-4 group-hover:scale-110 transition-transform`}
+                      className={`w-14 h-14 rounded-xl flex items-center justify-center ${item.bg} mb-4 group-hover:scale-110 transition-transform shrink-0`}
                     >
                       <item.icon
                         className={`w-7 h-7 ${item.color}`}

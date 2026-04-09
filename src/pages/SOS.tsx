@@ -20,11 +20,11 @@ export default function SOS() {
 
   return (
     <div className="flex flex-col gap-8 pb-12 relative">
-      <header className="text-center md:text-left">
-        <h1 className="text-3xl font-bold tracking-tight mb-2 text-[#FF3D00]">
+      <header className="text-center sm:text-left">
+        <h1 className="text-xl sm:text-2xl sm:text-3xl font-bold tracking-tight mb-2 text-[#FF3D00]">
           Acil Durum Merkezi
         </h1>
-        <p className="text-white/60">
+        <p className="text-white/60 text-xs sm:text-sm sm:text-base">
           Lütfen ihtiyacınız olan acil durumu seçin. Size en hızlı şekilde
           yardımcı olacağız.
         </p>

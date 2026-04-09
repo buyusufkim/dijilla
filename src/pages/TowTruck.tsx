@@ -121,33 +121,40 @@ export default function TowTruck() {
         async (position) => {
           const { latitude, longitude } = position.coords;
           
-          if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
+          const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+          let addressFound = false;
+
+          if (apiKey) {
             try {
-              const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`);
+              const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`);
               const data = await response.json();
-              if (data.results && data.results.length > 0) {
+              if (data.status === "OK" && data.results && data.results.length > 0) {
                 setAddress(data.results[0].formatted_address);
-                setIsLocating(false);
-                return;
+                addressFound = true;
+              } else if (data.status === "REQUEST_DENIED") {
+                console.warn("Google Geocoding API denied request (Legacy API not activated?)");
               }
             } catch (error) {
               console.error("Reverse geocoding error:", error);
             }
-          } else {
+          }
+
+          if (!addressFound) {
             try {
               const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
               const data = await response.json();
               if (data.display_name) {
                 setAddress(data.display_name);
-                setIsLocating(false);
-                return;
+                addressFound = true;
               }
             } catch (error) {
               console.error("Nominatim reverse geocoding error:", error);
             }
           }
           
-          setAddress(`${latitude}, ${longitude}`);
+          if (!addressFound) {
+            setAddress(`${latitude}, ${longitude}`);
+          }
           setIsLocating(false);
         },
         (error) => {
@@ -175,20 +182,20 @@ export default function TowTruck() {
   return (
     <div className="min-h-full flex flex-col gap-6">
       {/* Header */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button 
             onClick={handleBack}
             className="p-2 bg-[#1A233A] rounded-xl border border-white/10 hover:bg-white/5 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Çekici Çağır</h1>
-            <p className="text-sm text-white/50">Yol yardım talebi oluşturun</p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Çekici Çağır</h1>
+            <p className="text-white/50 text-xs sm:text-sm">Yol yardım talebi oluşturun</p>
           </div>
         </div>
-        <div className="hidden md:block">
+        <div className="hidden sm:block">
           <Logo textClassName="text-xl" iconSize="w-8 h-8" />
         </div>
       </header>

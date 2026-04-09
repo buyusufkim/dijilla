@@ -1,4 +1,4 @@
--- Supabase Schema for Dijilla App
+-- Supabase Schema for Droto App
 
 -- 1. Profiles Table
 CREATE TABLE IF NOT EXISTS profiles (

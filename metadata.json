@@ -1,6 +1,6 @@
 {
-  "name": "Dijilla",
-  "description": "High-conversion automotive financial assistant. Risk analysis, insurance triggers, and roadside assistance monetization.",
+  "name": "Droto",
+  "description": "Kontrol sende. Akıllı araç ekosistemi ve finansal asistan.",
   "requestFramePermissions": [
     "geolocation",
     "camera"

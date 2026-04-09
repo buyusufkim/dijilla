@@ -19,7 +19,7 @@ export default function AIAssistant() {
     {
       id: "1",
       role: "assistant",
-      content: "Merhaba! Ben Dijilla Yapay Zeka. Aracınızla ilgili bir arızayı teşhis edebilir, sigorta poliçeleriniz hakkında bilgi verebilir veya acil durumlarda sizi yönlendirebilirim. Size nasıl yardımcı olabilirim?",
+      content: "Merhaba! Ben Droto Yapay Zeka. Aracınızla ilgili bir arızayı teşhis edebilir, sigorta poliçeleriniz hakkında bilgi verebilir veya acil durumlarda sizi yönlendirebilirim. Size nasıl yardımcı olabilirim?",
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -82,12 +82,12 @@ export default function AIAssistant() {
             }
           ],
           config: {
-            systemInstruction: "Sen Dijilla'nın uzman araç arıza teşhis asistanısın. Fotoğrafları analiz ederek olası sorunları, ciddiyet seviyesini ve yapılması gerekenleri profesyonelce açıkla."
+            systemInstruction: "Sen Droto'nun uzman araç arıza teşhis asistanısın. Fotoğrafları analiz ederek olası sorunları, ciddiyet seviyesini ve yapılması gerekenleri profesyonelce açıkla."
           }
         });
       } else {
         const history = messages.map(m => `${m.role === 'user' ? 'Kullanıcı' : 'Asistan'}: ${m.content}`).join('\n');
-        const prompt = `Sen Dijilla adlı akıllı araç ekosisteminin yapay zeka asistanısın. Kullanıcılara araç arızaları, sigorta poliçeleri ve acil durumlar konusunda yardımcı oluyorsun. 
+        const prompt = `Sen Droto adlı akıllı araç ekosisteminin yapay zeka asistanısın. Kullanıcılara araç arızaları, sigorta poliçeleri ve acil durumlar konusunda yardımcı oluyorsun. 
         
         Geçmiş konuşma:
         ${history}
@@ -124,20 +124,22 @@ export default function AIAssistant() {
   return (
     <div className="flex flex-col flex-1">
       {/* Header */}
-      <header className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#00E5FF]/20 flex items-center justify-center border border-[#00E5FF]/30">
-            <Bot className="w-5 h-5 text-[#00E5FF]" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Yapay Zeka Asistanı</h1>
-            <p className="text-xs text-[#00E676] flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-[#00E676] animate-pulse"></span>
-              Çevrimiçi
-            </p>
+      <header className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#00E5FF]/20 flex items-center justify-center border border-[#00E5FF]/30">
+              <Bot className="w-5 h-5 text-[#00E5FF]" />
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight">Yapay Zeka Asistanı</h1>
+              <p className="text-[10px] sm:text-xs text-[#00E676] flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#00E676] animate-pulse"></span>
+                Çevrimiçi
+              </p>
+            </div>
           </div>
         </div>
       </header>

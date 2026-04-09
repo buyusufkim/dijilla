@@ -293,13 +293,13 @@ export default function VehicleDetail() {
       <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4 w-full sm:w-auto">
           <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors shrink-0">
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate">Araç Detayı</h1>
         </div>
         <Button 
           onClick={() => navigate(`/protection/${id}`)}
-          className="w-full sm:w-auto bg-gradient-to-r from-[#FF3D00] to-[#FF6D00] text-white font-bold gap-2 shadow-lg shadow-[#FF3D00]/20"
+          className="w-full sm:w-auto bg-gradient-to-r from-[#FF3D00] to-[#FF6D00] text-white font-bold gap-2 shadow-lg shadow-[#FF3D00]/20 h-12 sm:h-10"
         >
           <ShieldCheck className="w-4 h-4" />
           Koruma Paneli
@@ -341,7 +341,7 @@ export default function VehicleDetail() {
       <div className="space-y-4">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-[#FF3D00]" />
-          Dijilla Risk Raporu
+          Droto Risk Raporu
         </h3>
         
         <Card className="bg-[#1A233A] border-[#FF3D00]/20 overflow-hidden">
@@ -364,7 +364,7 @@ export default function VehicleDetail() {
           
           <CardContent className="p-6 space-y-6">
             {/* Predicted Issues */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <p className="text-sm font-bold text-white/60 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-yellow-500" />
@@ -456,7 +456,7 @@ export default function VehicleDetail() {
                 <div className="pt-2 border-t border-white/5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-[#FFD600]" />
-                    <p className="text-xs font-bold text-[#FFD600] uppercase tracking-wider">Dijilla Çözümü</p>
+                    <p className="text-xs font-bold text-[#FFD600] uppercase tracking-wider">Droto Çözümü</p>
                   </div>
                   <p className="text-sm text-white/70">{rec.monetization.suggestion}</p>
                   <Button className="w-full bg-white/5 hover:bg-white/10 text-white font-bold h-10 rounded-xl text-xs">

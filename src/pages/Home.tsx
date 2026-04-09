@@ -115,12 +115,12 @@ export default function Home() {
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 relative">
         <div className="w-full sm:w-auto">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white/90 truncate">
+          <h1 className="text-xl sm:text-2xl sm:text-3xl font-bold text-white/90 truncate">
             Günaydın {displayName},
           </h1>
           <div className="flex items-center gap-2 mt-2 text-white/60">
-            <CloudRain className="w-5 h-5 text-[#00E5FF] shrink-0" />
-            <span className="text-sm sm:text-base">
+            <CloudRain className="w-4 h-4 sm:w-5 sm:h-5 text-[#00E5FF] shrink-0" />
+            <span className="text-xs sm:text-sm sm:text-base">
               Yollar bugün açık, hafif yağmurlu.
             </span>
           </div>
@@ -294,18 +294,18 @@ export default function Home() {
       {/* Management Features */}
       <section>
         <h3 className="text-lg font-medium text-white/80 mb-6">Araç Yönetimi</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
           <Card 
             onClick={() => navigate('/glovebox')}
             className="bg-[#1A233A] border-white/10 hover:border-[#00E5FF]/30 transition-all cursor-pointer group"
           >
-            <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#00E5FF]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <FileText className="w-6 h-6 text-[#00E5FF]" />
+            <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#00E5FF]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-[#00E5FF]" />
               </div>
               <div>
-                <p className="font-bold text-sm">Dijital Torpido</p>
-                <p className="text-[10px] text-white/40">Belgelerim</p>
+                <p className="font-bold text-[11px] sm:text-sm">Dijital Torpido</p>
+                <p className="text-[9px] sm:text-[10px] text-white/40">Belgelerim</p>
               </div>
             </CardContent>
           </Card>
@@ -314,13 +314,13 @@ export default function Home() {
             onClick={() => navigate('/fuel')}
             className="bg-[#1A233A] border-white/10 hover:border-[#00E5FF]/30 transition-all cursor-pointer group"
           >
-            <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#FFD600]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Fuel className="w-6 h-6 text-[#FFD600]" />
+            <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#FFD600]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Fuel className="w-5 h-5 sm:w-6 sm:h-6 text-[#FFD600]" />
               </div>
               <div>
-                <p className="font-bold text-sm">Yakıt & Şarj</p>
-                <p className="text-[10px] text-white/40">İstasyon Bul</p>
+                <p className="font-bold text-[11px] sm:text-sm">Yakıt & Şarj</p>
+                <p className="text-[9px] sm:text-[10px] text-white/40">İstasyon Bul</p>
               </div>
             </CardContent>
           </Card>
@@ -329,13 +329,13 @@ export default function Home() {
             onClick={() => navigate('/expenses')}
             className="bg-[#1A233A] border-white/10 hover:border-[#00E5FF]/30 transition-all cursor-pointer group"
           >
-            <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#00E676]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BarChart3 className="w-6 h-6 text-[#00E676]" />
+            <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#00E676]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-[#00E676]" />
               </div>
               <div>
-                <p className="font-bold text-sm">Gider Takibi</p>
-                <p className="text-[10px] text-white/40">Analiz & Tasarruf</p>
+                <p className="font-bold text-[11px] sm:text-sm">Gider Takibi</p>
+                <p className="text-[9px] sm:text-[10px] text-white/40">Analiz & Tasarruf</p>
               </div>
             </CardContent>
           </Card>
@@ -344,13 +344,13 @@ export default function Home() {
             onClick={() => navigate('/ai-assistant')}
             className="bg-[#1A233A] border-white/10 hover:border-[#00E5FF]/30 transition-all cursor-pointer group"
           >
-            <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BotIcon className="w-6 h-6 text-purple-400" />
+            <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <BotIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
               </div>
               <div>
-                <p className="font-bold text-sm">AI Teşhis</p>
-                <p className="text-[10px] text-white/40">Arıza Analizi</p>
+                <p className="font-bold text-[11px] sm:text-sm">AI Teşhis</p>
+                <p className="text-[9px] sm:text-[10px] text-white/40">Arıza Analizi</p>
               </div>
             </CardContent>
           </Card>
@@ -359,13 +359,13 @@ export default function Home() {
             onClick={() => navigate('/maintenance')}
             className="bg-[#1A233A] border-white/10 hover:border-[#00E5FF]/30 transition-all cursor-pointer group"
           >
-            <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#00E5FF]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Wrench className="w-6 h-6 text-[#00E5FF]" />
+            <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#00E5FF]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Wrench className="w-5 h-5 sm:w-6 sm:h-6 text-[#00E5FF]" />
               </div>
               <div>
-                <p className="font-bold text-sm">Bakım Planı</p>
-                <p className="text-[10px] text-white/40">Randevu & Takip</p>
+                <p className="font-bold text-[11px] sm:text-sm">Bakım Planı</p>
+                <p className="text-[9px] sm:text-[10px] text-white/40">Randevu & Takip</p>
               </div>
             </CardContent>
           </Card>
@@ -374,13 +374,13 @@ export default function Home() {
             onClick={() => navigate('/travel-advisor')}
             className="bg-[#1A233A] border-white/10 hover:border-[#00E5FF]/30 transition-all cursor-pointer group"
           >
-            <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#FF3D00]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Map className="w-6 h-6 text-[#FF3D00]" />
+            <CardContent className="p-3 sm:p-4 flex flex-col items-center text-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#FF3D00]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Map className="w-5 h-5 sm:w-6 sm:h-6 text-[#FF3D00]" />
               </div>
               <div>
-                <p className="font-bold text-sm">Seyahat Danışmanı</p>
-                <p className="text-[10px] text-white/40">Rota & İhtiyaçlar</p>
+                <p className="font-bold text-[11px] sm:text-sm">Seyahat Danışmanı</p>
+                <p className="text-[9px] sm:text-[10px] text-white/40">Rota & İhtiyaçlar</p>
               </div>
             </CardContent>
           </Card>
@@ -555,7 +555,7 @@ export default function Home() {
         <h3 className="text-lg font-medium text-white/80 mb-6">
           Hızlı İşlemler
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           <QuickAction
             icon={Wrench}
             label="Çekici Çağır"
@@ -621,13 +621,13 @@ export default function Home() {
 
 function QuickAction({ icon: Icon, label, color, bg, onClick }: any) {
   return (
-    <button onClick={onClick} className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 p-4 bg-[#1A233A] rounded-2xl border border-white/5 hover:border-white/20 transition-all active:scale-95 group">
+    <button onClick={onClick} className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-[#1A233A] rounded-2xl border border-white/5 hover:border-white/20 transition-all active:scale-95 group">
       <div
-        className={`w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-xl flex items-center justify-center ${bg} border border-white/5 group-hover:scale-110 transition-transform`}
+        className={`w-10 h-10 sm:w-14 sm:h-14 shrink-0 rounded-xl flex items-center justify-center ${bg} border border-white/5 group-hover:scale-110 transition-transform`}
       >
         <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${color}`} strokeWidth={2} />
       </div>
-      <span className="font-medium text-sm sm:text-base text-white/90 text-center sm:text-left leading-tight">{label}</span>
+      <span className="font-medium text-[11px] sm:text-base text-white/90 text-center sm:text-left leading-tight">{label}</span>
     </button>
   );
 }

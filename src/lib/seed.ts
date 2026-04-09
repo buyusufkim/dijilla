@@ -1,47 +1,49 @@
-import { supabase } from '../supabase';
+import { db, collection, query, where, getDocs, addDoc } from '@/firebase';
 
 export const seedDemoData = async (userId: string) => {
   try {
     // Check if vehicles already exist
-    const { data: existingVehicles } = await supabase.from('vehicles').select('id').eq('user_id', userId);
-    if (existingVehicles && existingVehicles.length > 0) return; // Already seeded
+    const vQuery = query(collection(db, 'vehicles'), where('user_id', '==', userId));
+    const existingVehicles = await getDocs(vQuery);
+    if (!existingVehicles.empty) return; // Already seeded
 
     // 1. Insert Vehicles
-    const { data: vehicles, error: vError } = await supabase.from('vehicles').insert([
+    const vehicleData = [
       {
         user_id: userId,
         plate: '34 ABC 123',
-        brand: 'Tesla',
-        model: 'Model Y',
+        brand_model: 'Tesla Model Y',
         year: 2023,
         fuel_type: 'Elektrik',
         insurance_expiry: '2026-10-15',
         inspection_expiry: '2026-12-01',
-        tax_status: 'Ödendi'
+        tax_status: 'Ödendi',
+        created_at: new Date().toISOString()
       },
       {
         user_id: userId,
         plate: '06 XYZ 789',
-        brand: 'Volkswagen',
-        model: 'Golf',
+        brand_model: 'Volkswagen Golf',
         year: 2021,
         fuel_type: 'Benzin',
         insurance_expiry: '2026-05-20',
         inspection_expiry: '2026-08-10',
-        tax_status: 'Ödendi'
+        tax_status: 'Ödendi',
+        created_at: new Date().toISOString()
       }
-    ]).select();
+    ];
 
-    if (vError || !vehicles) {
-      console.error("Error seeding vehicles:", vError);
-      return;
+    const vehicles: any[] = [];
+    for (const v of vehicleData) {
+      const docRef = await addDoc(collection(db, 'vehicles'), v);
+      vehicles.push({ id: docRef.id, ...v });
     }
 
     const teslaId = vehicles[0].id;
     const golfId = vehicles[1].id;
 
     // 2. Insert Maintenance Records
-    await supabase.from('maintenance_records').insert([
+    const maintenanceData = [
       {
         user_id: userId,
         vehicle_id: teslaId,
@@ -49,7 +51,8 @@ export const seedDemoData = async (userId: string) => {
         mileage: 15000,
         date: '2025-11-10',
         cost: 3500,
-        notes: 'Polen filtresi değişti, genel kontrol yapıldı.'
+        notes: 'Polen filtresi değişti, genel kontrol yapıldı.',
+        created_at: new Date().toISOString()
       },
       {
         user_id: userId,
@@ -58,75 +61,66 @@ export const seedDemoData = async (userId: string) => {
         mileage: 45000,
         date: '2025-09-05',
         cost: 2200,
-        notes: 'Motor yağı ve yağ filtresi değişti.'
+        notes: 'Motor yağı ve yağ filtresi değişti.',
+        created_at: new Date().toISOString()
       }
-    ]);
+    ];
+
+    for (const m of maintenanceData) {
+      await addDoc(collection(db, 'maintenance_records'), m);
+    }
 
     // 3. Insert Appointments
-    await supabase.from('appointments').insert([
+    const appointmentData = [
       {
         user_id: userId,
         vehicle_id: teslaId,
         service_type: 'Kış Lastiği Değişimi',
         appointment_date: '2026-11-15T09:00:00Z',
         location: 'Tesla Maslak Servis',
-        status: 'pending'
+        status: 'scheduled',
+        created_at: new Date().toISOString()
       }
-    ]);
+    ];
 
-    // 4. Insert Insurance Policies
-    await supabase.from('insurance_policies').insert([
+    for (const a of appointmentData) {
+      await addDoc(collection(db, 'maintenance_appointments'), a);
+    }
+
+    // 4. Insert Expenses
+    const expenseData = [
       {
         user_id: userId,
         vehicle_id: teslaId,
-        type: 'Kasko',
-        provider: 'Allianz Sigorta',
-        policy_number: 'ALZ-2026-12345',
-        start_date: '2025-10-15',
-        end_date: '2026-10-15',
-        premium: 15000,
-        status: 'active'
-      },
-      {
-        user_id: userId,
-        vehicle_id: golfId,
-        type: 'Trafik Sigortası',
-        provider: 'Anadolu Sigorta',
-        policy_number: 'AND-2026-98765',
-        start_date: '2025-05-20',
-        end_date: '2026-05-20',
-        premium: 4500,
-        status: 'active'
-      }
-    ]);
-
-    // 5. Insert Expenses
-    await supabase.from('expenses').insert([
-      {
-        user_id: userId,
-        vehicle_id: teslaId,
-        category: 'Şarj',
+        category: 'fuel',
+        title: 'ZES Hızlı Şarj',
         amount: 450,
-        date: '2026-04-01',
-        description: 'ZES Hızlı Şarj'
+        expense_date: '2026-04-01',
+        created_at: new Date().toISOString()
       },
       {
         user_id: userId,
         vehicle_id: golfId,
-        category: 'Yakıt',
+        category: 'fuel',
+        title: 'Shell V-Power',
         amount: 1200,
-        date: '2026-04-02',
-        description: 'Shell V-Power'
+        expense_date: '2026-04-02',
+        created_at: new Date().toISOString()
       },
       {
         user_id: userId,
         vehicle_id: teslaId,
-        category: 'Yıkama',
+        category: 'other',
+        title: 'İç-Dış Yıkama',
         amount: 250,
-        date: '2026-04-03',
-        description: 'İç-Dış Yıkama'
+        expense_date: '2026-04-03',
+        created_at: new Date().toISOString()
       }
-    ]);
+    ];
+
+    for (const e of expenseData) {
+      await addDoc(collection(db, 'expenses'), e);
+    }
 
     console.log("Demo verileri başarıyla yüklendi!");
   } catch (error) {

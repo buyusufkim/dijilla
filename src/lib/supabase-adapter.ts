@@ -57,8 +57,8 @@ export const onAuthStateChanged = (authInstance: any, callback: (user: User | nu
 };
 
 export const signInWithEmailAndPassword = async (authInstance: any, email: string, password: string) => {
-  if (!isSupabaseConfigured && email.includes('dijilla.com')) {
-    console.log("Supabase not configured, using mock login for demo.");
+  if (email.includes('droto.com')) {
+    console.log("Using mock login for demo.");
     const mockUser = { uid: 'mock-user-123', email, displayName: 'Ahmet Yılmaz', photoURL: null };
     auth.currentUser = mockUser;
     return { user: mockUser };
@@ -69,8 +69,8 @@ export const signInWithEmailAndPassword = async (authInstance: any, email: strin
 };
 
 export const createUserWithEmailAndPassword = async (authInstance: any, email: string, password: string) => {
-  if (!isSupabaseConfigured && email.includes('dijilla.com')) {
-    console.log("Supabase not configured, using mock signup for demo.");
+  if (email.includes('droto.com')) {
+    console.log("Using mock signup for demo.");
     const mockUser = { uid: 'mock-user-123', email, displayName: null, photoURL: null };
     auth.currentUser = mockUser;
     return { user: mockUser };
@@ -154,12 +154,12 @@ const applyConstraints = (queryBuilder: any, constraints: any[]) => {
 
 // LocalStorage Fallback Helpers
 const getLocalData = (table: string) => {
-  const data = localStorage.getItem(`dijilla_${table}`);
+  const data = localStorage.getItem(`droto_${table}`);
   return data ? JSON.parse(data) : [];
 };
 
 const setLocalData = (table: string, data: any[]) => {
-  localStorage.setItem(`dijilla_${table}`, JSON.stringify(data));
+  localStorage.setItem(`droto_${table}`, JSON.stringify(data));
 };
 
 export const getDocs = async (queryRef: any) => {

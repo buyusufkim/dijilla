@@ -213,7 +213,7 @@ export default function Layout() {
 
         {/* Subtle background glow */}
         <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00E5FF]/5 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="max-w-6xl mx-auto p-4 md:p-8 min-h-full w-full flex flex-col">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 min-h-full w-full flex flex-col">
           <Outlet />
         </div>
       </main>

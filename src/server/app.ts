@@ -9,7 +9,7 @@ app.use(express.json());
 
 // Health Check
 app.get("/api/health", (req: Request, res: Response) => {
-  res.json({ status: "ok", service: "Dijilla Insurtech Backend" });
+  res.json({ status: "ok", service: "Droto Insurtech Backend" });
 });
 
 // Routes

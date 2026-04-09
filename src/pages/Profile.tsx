@@ -113,10 +113,10 @@ export default function Profile() {
     <div className="flex flex-col gap-8 pb-12 relative w-full overflow-x-hidden">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+          <h1 className="text-xl sm:text-2xl sm:text-3xl font-bold tracking-tight mb-2">
             Ailem & Profil
           </h1>
-          <p className="text-white/60 text-sm sm:text-base">
+          <p className="text-white/60 text-xs sm:text-sm sm:text-base">
             Kendi profilinizi ve aile üyelerinizi yönetin.
           </p>
         </div>

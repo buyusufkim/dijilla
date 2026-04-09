@@ -26,7 +26,7 @@ export class PolicyService {
       end_date: endDate.toISOString().split("T")[0],
       premium: checkout.amount,
       status: "active",
-      document_url: `https://storage.dijilla.com/policies/${checkout.id}.pdf`
+      document_url: `https://storage.droto.com/policies/${checkout.id}.pdf`
     };
 
     const { data: policy, error } = await (supabaseAdmin

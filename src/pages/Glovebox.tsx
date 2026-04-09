@@ -147,16 +147,16 @@ export default function Glovebox() {
   return (
     <div className="space-y-6 pb-24">
       {/* Header */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
-          <h1 className="text-2xl font-bold tracking-tight">Dijital Torpido</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dijital Torpido</h1>
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] rounded-xl gap-2">
+            <Button className="bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] rounded-xl gap-2 w-full sm:w-auto h-12 sm:h-10">
               <Plus className="w-4 h-4" />
               Ekle
             </Button>
@@ -291,7 +291,7 @@ export default function Glovebox() {
             <Upload className="w-6 h-6 text-[#00E5FF]" />
           </div>
           <h3 className="font-semibold mb-1">Yeni Belge Tara</h3>
-          <p className="text-sm text-white/40 mb-4">Belgenizin fotoğrafını çekin, Dijilla otomatik olarak bilgileri okusun.</p>
+          <p className="text-sm text-white/40 mb-4">Belgenizin fotoğrafını çekin, Droto otomatik olarak bilgileri okusun.</p>
           <Button variant="outline" className="border-[#00E5FF]/30 text-[#00E5FF] hover:bg-[#00E5FF]/10 rounded-xl">
             Kamerayı Aç
           </Button>

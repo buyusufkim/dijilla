@@ -82,13 +82,13 @@ export default function Onboarding() {
           <div className="flex justify-center mb-6">
             <Logo textClassName="text-4xl" iconSize="w-16 h-16" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Akıllı Araç ve Sürücü <br className="hidden md:block" />
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            Droto: Kontrol sende <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00E5FF] to-[#00E676]">
-              Ekosistemine Hoş Geldiniz
+              Akıllı Araç Ekosistemi
             </span>
           </h1>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-white/60 max-w-2xl mx-auto px-4">
             Sadece bir yol yardım uygulaması değil. Sizin ve ailenizin tüm
             sigorta, araç, konut ve sağlık ihtiyaçlarını tek bir merkezden
             yönetin.

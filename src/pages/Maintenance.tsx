@@ -183,19 +183,19 @@ export default function Maintenance() {
 
   return (
     <div className="flex flex-col gap-8 pb-12">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Bakım Planlama</h1>
-          <p className="text-white/60">Aracınızın sağlığını koruyun ve ömrünü uzatın.</p>
+          <h1 className="text-xl sm:text-2xl sm:text-3xl font-bold tracking-tight mb-2">Bakım Planlama</h1>
+          <p className="text-white/60 text-xs sm:text-sm sm:text-base">Aracınızın sağlığını koruyun ve ömrünü uzatın.</p>
         </div>
         
         {vehicles.length > 0 && (
-          <div className="flex items-center gap-3 bg-[#1A233A] p-2 rounded-2xl border border-white/10 overflow-x-auto whitespace-nowrap scrollbar-hide">
+          <div className="flex items-center gap-2 sm:gap-3 bg-[#1A233A] p-2 rounded-2xl border border-white/10 overflow-x-auto whitespace-nowrap scrollbar-hide max-w-full sm:max-w-xs md:max-w-md">
             {vehicles.map((v) => (
               <button
                 key={v.id}
                 onClick={() => setSelectedVehicle(v)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 ${
                   selectedVehicle?.id === v.id
                     ? "bg-[#00E5FF] text-[#0A1128] shadow-lg shadow-[#00E5FF]/20"
                     : "text-white/60 hover:bg-white/5"

@@ -37,14 +37,16 @@ export default function Insurance() {
 
   return (
     <div className="flex flex-col gap-8 pb-12">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight mb-2">
-          Sigorta & Teklifler
-        </h1>
-        <p className="text-white/60">
-          Ailenizin tüm sigorta ihtiyaçlarını tek bir yerden yönetin ve
-          karşılaştırın.
-        </p>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl sm:text-3xl font-bold tracking-tight mb-2">
+            Sigorta & Teklifler
+          </h1>
+          <p className="text-white/60 text-xs sm:text-sm sm:text-base">
+            Ailenizin tüm sigorta ihtiyaçlarını tek bir yerden yönetin ve
+            karşılaştırın.
+          </p>
+        </div>
       </header>
 
       {/* Expiration Reminder */}

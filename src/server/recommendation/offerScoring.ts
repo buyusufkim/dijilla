@@ -32,7 +32,7 @@ export class OfferScoring {
       }
 
       // Badge: Recommended (Mock logic)
-      if (offer.provider_name.includes("Dijilla") && offer.premium < 10000) {
+      if (offer.provider_name.includes("Droto") && offer.premium < 10000) {
         badges.push("Önerilen");
         score += 20;
       }
