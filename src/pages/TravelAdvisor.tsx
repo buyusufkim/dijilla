@@ -325,7 +325,9 @@ export default function TravelAdvisor() {
         <CardContent className="p-6 space-y-4">
           <div className="relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#00E5FF]"></div>
+            <label htmlFor="startLocation" className="sr-only">Nereden?</label>
             <input
+              id="startLocation"
               type="text"
               placeholder="Nereden?"
               value={startLocation}
@@ -630,7 +632,9 @@ function DestinationInput({
   return (
     <div className="relative">
       <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF3D00]" />
+      <label htmlFor="endLocation" className="sr-only">Nereye?</label>
       <input
+        id="endLocation"
         type="text"
         placeholder="Nereye?"
         value={inputValue}

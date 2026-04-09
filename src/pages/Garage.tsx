@@ -137,13 +137,21 @@ export default function Garage() {
   }, [user]);
 
   const handleAddAsset = async () => {
-    if (!user) return;
+    console.log("handleAddAsset triggered", { assetType, assetName, brand, model, year });
+    if (!user) {
+      console.warn("No user found in handleAddAsset");
+      return;
+    }
 
     if (assetType === "vehicle") {
-      if (!assetName.trim() || !brand.trim() || !model.trim() || !year) return;
+      if (!assetName.trim() || !brand.trim() || !model.trim() || !year) {
+        console.warn("Validation failed for vehicle", { assetName, brand, model, year });
+        return;
+      }
       setIsSubmitting(true);
       try {
-        await addDoc(collection(db, "vehicles"), {
+        console.log("Calling addDoc for vehicle...");
+        const result = await addDoc(collection(db, "vehicles"), {
           user_id: user.uid,
           plate: assetName,
           brand_model: `${brand} ${model}`,
@@ -157,6 +165,7 @@ export default function Garage() {
           tax_status: 'Ödendi',
           created_at: serverTimestamp()
         });
+        console.log("addDoc result:", result);
 
         if (setReminder) {
           addNotification({
@@ -176,25 +185,32 @@ export default function Garage() {
         setInspectionExpiry(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
       } catch (error) {
         console.error('Error adding vehicle:', error);
+        alert("Araç eklenirken bir hata oluştu. Lütfen tüm alanları doğru doldurduğunuzdan emin olun.");
       } finally {
         setIsSubmitting(false);
       }
     } else {
-      if (!assetName.trim() || !assetDetail.trim()) return;
+      if (!assetName.trim() || !assetDetail.trim()) {
+        console.warn("Validation failed for home", { assetName, assetDetail });
+        return;
+      }
       setIsSubmitting(true);
       try {
-        await addDoc(collection(db, "homes"), {
+        console.log("Calling addDoc for home...");
+        const result = await addDoc(collection(db, "homes"), {
           user_id: user.uid,
           name: assetName,
           address: assetDetail,
           created_at: serverTimestamp()
         });
+        console.log("addDoc result:", result);
 
         setIsAddingAsset(false);
         setAssetName("");
         setAssetDetail("");
       } catch (error) {
         console.error('Error adding home:', error);
+        alert("Konut eklenirken bir hata oluştu. Lütfen tüm alanları doğru doldurduğunuzdan emin olun.");
       } finally {
         setIsSubmitting(false);
       }
@@ -493,8 +509,8 @@ export default function Garage() {
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/80">Varlık Türü</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <label htmlFor="assetType" className="text-sm font-medium text-white/80">Varlık Türü</label>
+                    <div id="assetType" className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => setAssetType("vehicle")}
                         className={`py-2 px-3 rounded-lg text-sm font-medium border transition-colors flex items-center justify-center gap-2 ${
@@ -518,10 +534,11 @@ export default function Garage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/80">
+                    <label htmlFor="assetName" className="text-sm font-medium text-white/80">
                       {assetType === "vehicle" ? "Plaka" : "Konut Adı"}
                     </label>
                     <input
+                      id="assetName"
                       type="text"
                       value={assetName}
                       onChange={(e) => setAssetName(e.target.value)}
@@ -534,8 +551,9 @@ export default function Garage() {
                     <>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-white/80">Marka</label>
+                          <label htmlFor="brand" className="text-sm font-medium text-white/80">Marka</label>
                           <input
+                            id="brand"
                             type="text"
                             value={brand}
                             onChange={(e) => setBrand(e.target.value)}
@@ -544,8 +562,9 @@ export default function Garage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-white/80">Model</label>
+                          <label htmlFor="model" className="text-sm font-medium text-white/80">Model</label>
                           <input
+                            id="model"
                             type="text"
                             value={model}
                             onChange={(e) => setModel(e.target.value)}
@@ -556,8 +575,9 @@ export default function Garage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-white/80">Kilometre</label>
+                          <label htmlFor="mileage" className="text-sm font-medium text-white/80">Kilometre</label>
                           <input
+                            id="mileage"
                             type="number"
                             value={mileage}
                             onChange={(e) => setMileage(Number(e.target.value))}
@@ -566,8 +586,9 @@ export default function Garage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-white/80">Muayene Tarihi</label>
+                          <label htmlFor="inspectionExpiry" className="text-sm font-medium text-white/80">Muayene Tarihi</label>
                           <input
+                            id="inspectionExpiry"
                             type="date"
                             value={inspectionExpiry}
                             onChange={(e) => setInspectionExpiry(e.target.value)}
@@ -577,8 +598,9 @@ export default function Garage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-white/80">Yıl</label>
+                          <label htmlFor="year" className="text-sm font-medium text-white/80">Yıl</label>
                           <input
+                            id="year"
                             type="number"
                             value={year}
                             onChange={(e) => setYear(Number(e.target.value))}
@@ -587,8 +609,9 @@ export default function Garage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-white/80">Yakıt Türü</label>
+                          <label htmlFor="fuelType" className="text-sm font-medium text-white/80">Yakıt Türü</label>
                           <select
+                            id="fuelType"
                             value={fuelType}
                             onChange={(e) => setFuelType(e.target.value)}
                             className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-1 focus:ring-[#00E5FF]/50 transition-all appearance-none"
@@ -617,8 +640,9 @@ export default function Garage() {
                     </>
                   ) : (
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/80">Adres</label>
+                      <label htmlFor="assetDetail" className="text-sm font-medium text-white/80">Adres</label>
                       <input
+                        id="assetDetail"
                         type="text"
                         value={assetDetail}
                         onChange={(e) => setAssetDetail(e.target.value)}
@@ -631,10 +655,28 @@ export default function Garage() {
                   <Button 
                     onClick={handleAddAsset}
                     disabled={isSubmitting || (assetType === "vehicle" ? (!assetName.trim() || !brand.trim() || !model.trim() || !year) : (!assetName.trim() || !assetDetail.trim()))}
-                    className="w-full mt-4 bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] font-bold"
+                    className={`w-full mt-4 font-bold transition-all ${
+                      isSubmitting 
+                        ? "bg-white/10 text-white/40 cursor-not-allowed" 
+                        : (assetType === "vehicle" ? (!assetName.trim() || !brand.trim() || !model.trim() || !year) : (!assetName.trim() || !assetDetail.trim()))
+                          ? "bg-white/5 text-white/20 cursor-not-allowed"
+                          : "bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128]"
+                    }`}
                   >
-                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Kaydet"}
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Kaydediliyor...
+                      </span>
+                    ) : (
+                      "Kaydet"
+                    )}
                   </Button>
+                  
+                  {(assetType === "vehicle" ? (!assetName.trim() || !brand.trim() || !model.trim() || !year) : (!assetName.trim() || !assetDetail.trim())) && !isSubmitting && (
+                    <p className="text-[10px] text-center text-white/30 mt-2">
+                      Lütfen tüm zorunlu alanları (*) doldurun.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>

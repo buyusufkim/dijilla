@@ -413,26 +413,26 @@ export default function Maintenance() {
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/80">Hizmet Tipi</label>
-                    <input type="text" value={recordForm.service_type} onChange={(e) => setRecordForm({...recordForm, service_type: e.target.value})} placeholder="Örn: Periyodik Bakım" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
+                    <label htmlFor="service_type" className="text-sm font-medium text-white/80">Hizmet Tipi</label>
+                    <input id="service_type" type="text" value={recordForm.service_type} onChange={(e) => setRecordForm({...recordForm, service_type: e.target.value})} placeholder="Örn: Periyodik Bakım" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/80">Kilometre</label>
-                      <input type="number" value={recordForm.mileage} onChange={(e) => setRecordForm({...recordForm, mileage: e.target.value})} placeholder="75000" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
+                      <label htmlFor="mileage" className="text-sm font-medium text-white/80">Kilometre</label>
+                      <input id="mileage" type="number" value={recordForm.mileage} onChange={(e) => setRecordForm({...recordForm, mileage: e.target.value})} placeholder="75000" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-white/80">Maliyet (₺)</label>
-                      <input type="number" value={recordForm.cost} onChange={(e) => setRecordForm({...recordForm, cost: e.target.value})} placeholder="2500" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
+                      <label htmlFor="cost" className="text-sm font-medium text-white/80">Maliyet (₺)</label>
+                      <input id="cost" type="number" value={recordForm.cost} onChange={(e) => setRecordForm({...recordForm, cost: e.target.value})} placeholder="2500" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/80">Tarih</label>
-                    <input type="date" value={recordForm.date} onChange={(e) => setRecordForm({...recordForm, date: e.target.value})} className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
+                    <label htmlFor="date" className="text-sm font-medium text-white/80">Tarih</label>
+                    <input id="date" type="date" value={recordForm.date} onChange={(e) => setRecordForm({...recordForm, date: e.target.value})} className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/80">Notlar</label>
-                    <textarea value={recordForm.notes} onChange={(e) => setRecordForm({...recordForm, notes: e.target.value})} placeholder="Yapılan işlemler hakkında detay..." className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none h-24 resize-none" />
+                    <label htmlFor="notes" className="text-sm font-medium text-white/80">Notlar</label>
+                    <textarea id="notes" value={recordForm.notes} onChange={(e) => setRecordForm({...recordForm, notes: e.target.value})} placeholder="Yapılan işlemler hakkında detay..." className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none h-24 resize-none" />
                   </div>
                   <Button onClick={handleAddRecord} className="w-full bg-[#00E5FF] text-[#0A1128] font-bold">Kaydet</Button>
                 </CardContent>
@@ -454,16 +454,16 @@ export default function Maintenance() {
                 </CardHeader>
                 <CardContent className="pt-6 space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/80">Bakım Türü</label>
-                    <input type="text" value={appointmentForm.service_type} onChange={(e) => setAppointmentForm({...appointmentForm, service_type: e.target.value})} placeholder="Örn: Yağ Değişimi" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
+                    <label htmlFor="app_service_type" className="text-sm font-medium text-white/80">Bakım Türü</label>
+                    <input id="app_service_type" type="text" value={appointmentForm.service_type} onChange={(e) => setAppointmentForm({...appointmentForm, service_type: e.target.value})} placeholder="Örn: Yağ Değişimi" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/80">Randevu Tarihi & Saati</label>
-                    <input type="datetime-local" value={appointmentForm.appointment_date} onChange={(e) => setAppointmentForm({...appointmentForm, appointment_date: e.target.value})} className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
+                    <label htmlFor="appointment_date" className="text-sm font-medium text-white/80">Randevu Tarihi & Saati</label>
+                    <input id="appointment_date" type="datetime-local" value={appointmentForm.appointment_date} onChange={(e) => setAppointmentForm({...appointmentForm, appointment_date: e.target.value})} className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/80">Servis Noktası / Konum</label>
-                    <input type="text" value={appointmentForm.location} onChange={(e) => setAppointmentForm({...appointmentForm, location: e.target.value})} placeholder="Örn: Yetkili Servis - Maslak" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
+                    <label htmlFor="location" className="text-sm font-medium text-white/80">Servis Noktası / Konum</label>
+                    <input id="location" type="text" value={appointmentForm.location} onChange={(e) => setAppointmentForm({...appointmentForm, location: e.target.value})} placeholder="Örn: Yetkili Servis - Maslak" className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:ring-1 focus:ring-[#00E5FF]/50 outline-none" />
                   </div>
                   <Button onClick={handleAddAppointment} className="w-full bg-[#00E676] text-[#0A1128] font-bold">Randevu Oluştur</Button>
                 </CardContent>

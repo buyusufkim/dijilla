@@ -217,8 +217,9 @@ export default function Expenses() {
               </div>
               <form onSubmit={handleAddExpense} className="p-6 space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-white/40 uppercase">Başlık</label>
+                  <label htmlFor="title" className="text-xs font-bold text-white/40 uppercase">Başlık</label>
                   <input
+                    id="title"
                     type="text"
                     required
                     value={title}
@@ -228,8 +229,9 @@ export default function Expenses() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-white/40 uppercase">Tutar (TL)</label>
+                  <label htmlFor="amount" className="text-xs font-bold text-white/40 uppercase">Tutar (TL)</label>
                   <input
+                    id="amount"
                     type="number"
                     required
                     min="0"
@@ -241,8 +243,9 @@ export default function Expenses() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-white/40 uppercase">Kategori</label>
+                  <label htmlFor="category" className="text-xs font-bold text-white/40 uppercase">Kategori</label>
                   <select
+                    id="category"
                     value={category}
                     onChange={(e) => setCategory(e.target.value as any)}
                     className="w-full bg-[#0A1128] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-[#00E5FF]/50 appearance-none"

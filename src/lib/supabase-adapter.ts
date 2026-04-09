@@ -108,6 +108,14 @@ export const updateProfile = async (user: any, data: { displayName?: string; pho
   }
 };
 
+// Helper to generate IDs
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
 // --- FIRESTORE ADAPTER ---
 export const db = {};
 
@@ -154,92 +162,155 @@ const applyConstraints = (queryBuilder: any, constraints: any[]) => {
 
 // LocalStorage Fallback Helpers
 const getLocalData = (table: string) => {
-  const data = localStorage.getItem(`droto_${table}`);
-  return data ? JSON.parse(data) : [];
+  try {
+    const data = localStorage.getItem(`droto_${table}`);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    console.error("localStorage read error:", e);
+    return [];
+  }
 };
 
 const setLocalData = (table: string, data: any[]) => {
-  localStorage.setItem(`droto_${table}`, JSON.stringify(data));
+  try {
+    localStorage.setItem(`droto_${table}`, JSON.stringify(data));
+  } catch (e) {
+    console.error("localStorage write error:", e);
+  }
 };
 
 export const getDocs = async (queryRef: any) => {
-  let q = supabase.from(queryRef.table).select('*');
-  if (queryRef.constraints) {
-    q = applyConstraints(q, queryRef.constraints);
-  }
-  const { data, error } = await q;
-  
-  if (error) {
-    console.warn(`${queryRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
-    let localData = getLocalData(queryRef.table);
-    
-    // Apply basic local filtering and sorting
-    if (queryRef.constraints) {
-      for (const c of queryRef.constraints) {
-        if (c.type === 'where' && c.op === '==') {
-          localData = localData.filter((item: any) => item[c.field] === c.value);
-        }
-      }
-      
-      // Apply local sorting
-      const orderByConstraint = queryRef.constraints.find((c: any) => c.type === 'orderBy');
-      if (orderByConstraint) {
-        localData.sort((a: any, b: any) => {
-          const valA = a[orderByConstraint.field];
-          const valB = b[orderByConstraint.field];
-          if (valA < valB) return orderByConstraint.direction === 'asc' ? -1 : 1;
-          if (valA > valB) return orderByConstraint.direction === 'asc' ? 1 : -1;
-          return 0;
-        });
-      }
-    }
-    
+  if (!isSupabaseConfigured) {
+    const localData = getLocalData(queryRef.table);
     return {
-      docs: localData.map((row: any) => ({
-        id: row.id,
-        data: () => row,
-      })),
+      docs: localData.map((row: any) => ({ id: row.id, data: () => row })),
       empty: localData.length === 0,
     };
   }
 
-  return {
-    docs: (data || []).map((row: any) => ({
-      id: row.id,
-      data: () => row,
-    })),
-    empty: data?.length === 0,
-  };
+  try {
+    let q = supabase.from(queryRef.table).select('*');
+    if (queryRef.constraints) {
+      q = applyConstraints(q, queryRef.constraints);
+    }
+    const { data, error } = await q;
+    
+    if (error) {
+      console.warn(`${queryRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+      let localData = getLocalData(queryRef.table);
+      
+      // Apply basic local filtering and sorting
+      if (queryRef.constraints) {
+        for (const c of queryRef.constraints) {
+          if (c.type === 'where' && c.op === '==') {
+            localData = localData.filter((item: any) => item[c.field] === c.value);
+          }
+        }
+        
+        // Apply local sorting
+        const orderByConstraint = queryRef.constraints.find((c: any) => c.type === 'orderBy');
+        if (orderByConstraint) {
+          localData.sort((a: any, b: any) => {
+            const valA = a[orderByConstraint.field];
+            const valB = b[orderByConstraint.field];
+            if (valA < valB) return orderByConstraint.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return orderByConstraint.direction === 'asc' ? 1 : -1;
+            return 0;
+          });
+        }
+      }
+      
+      return {
+        docs: localData.map((row: any) => ({
+          id: row.id,
+          data: () => row,
+        })),
+        empty: localData.length === 0,
+      };
+    }
+
+    return {
+      docs: (data || []).map((row: any) => ({
+        id: row.id,
+        data: () => row,
+      })),
+      empty: data?.length === 0,
+    };
+  } catch (err) {
+    console.error("getDocs exception:", err);
+    const localData = getLocalData(queryRef.table);
+    return {
+      docs: localData.map((row: any) => ({ id: row.id, data: () => row })),
+      empty: localData.length === 0,
+    };
+  }
 };
 
 export const getDoc = async (docRef: any) => {
-  const { data, error } = await supabase.from(docRef.table).select('*').eq('id', docRef.id).single();
-  
-  if (error) {
-    if (error.code !== 'PGRST116') {
-      console.warn(`${docRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
-    }
+  if (!isSupabaseConfigured) {
     const localData = getLocalData(docRef.table);
     const item = localData.find((x: any) => x.id === docRef.id);
-    return {
-      id: docRef.id,
-      exists: () => !!item,
-      data: () => item,
-    };
+    return { id: docRef.id, exists: () => !!item, data: () => item };
   }
 
-  return {
-    id: docRef.id,
-    exists: () => !!data,
-    data: () => data,
-  };
+  try {
+    const { data, error } = await supabase.from(docRef.table).select('*').eq('id', docRef.id).single();
+    
+    if (error) {
+      if (error.code !== 'PGRST116') {
+        console.warn(`${docRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+      }
+      const localData = getLocalData(docRef.table);
+      const item = localData.find((x: any) => x.id === docRef.id);
+      return {
+        id: docRef.id,
+        exists: () => !!item,
+        data: () => item,
+      };
+    }
+
+    return {
+      id: docRef.id,
+      exists: () => !!data,
+      data: () => data,
+    };
+  } catch (err) {
+    console.error("getDoc exception:", err);
+    const localData = getLocalData(docRef.table);
+    const item = localData.find((x: any) => x.id === docRef.id);
+    return { id: docRef.id, exists: () => !!item, data: () => item };
+  }
 };
 
 export const setDoc = async (docRef: any, data: any, options?: { merge?: boolean }) => {
-  const { error } = await supabase.from(docRef.table).upsert({ id: docRef.id, ...data });
-  
-  if (error) {
-    console.warn(`${docRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+  if (!isSupabaseConfigured) {
+    const localData = getLocalData(docRef.table);
+    const index = localData.findIndex((x: any) => x.id === docRef.id);
+    if (index >= 0) {
+      localData[index] = { ...localData[index], ...data, id: docRef.id };
+    } else {
+      localData.push({ ...data, id: docRef.id });
+    }
+    setLocalData(docRef.table, localData);
+    return;
+  }
+
+  try {
+    const { error } = await supabase.from(docRef.table).upsert({ id: docRef.id, ...data });
+    
+    if (error) {
+      console.warn(`${docRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+      const localData = getLocalData(docRef.table);
+      const index = localData.findIndex((x: any) => x.id === docRef.id);
+      if (index >= 0) {
+        localData[index] = { ...localData[index], ...data, id: docRef.id };
+      } else {
+        localData.push({ ...data, id: docRef.id });
+      }
+      setLocalData(docRef.table, localData);
+    }
+  } catch (err) {
+    console.error("setDoc exception:", err);
     const localData = getLocalData(docRef.table);
     const index = localData.findIndex((x: any) => x.id === docRef.id);
     if (index >= 0) {
@@ -252,10 +323,30 @@ export const setDoc = async (docRef: any, data: any, options?: { merge?: boolean
 };
 
 export const updateDoc = async (docRef: any, data: any) => {
-  const { error } = await supabase.from(docRef.table).update(data).eq('id', docRef.id);
-  
-  if (error) {
-    console.warn(`${docRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+  if (!isSupabaseConfigured) {
+    const localData = getLocalData(docRef.table);
+    const index = localData.findIndex((x: any) => x.id === docRef.id);
+    if (index >= 0) {
+      localData[index] = { ...localData[index], ...data };
+      setLocalData(docRef.table, localData);
+    }
+    return;
+  }
+
+  try {
+    const { error } = await supabase.from(docRef.table).update(data).eq('id', docRef.id);
+    
+    if (error) {
+      console.warn(`${docRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+      const localData = getLocalData(docRef.table);
+      const index = localData.findIndex((x: any) => x.id === docRef.id);
+      if (index >= 0) {
+        localData[index] = { ...localData[index], ...data };
+        setLocalData(docRef.table, localData);
+      }
+    }
+  } catch (err) {
+    console.error("updateDoc exception:", err);
     const localData = getLocalData(docRef.table);
     const index = localData.findIndex((x: any) => x.id === docRef.id);
     if (index >= 0) {
@@ -266,25 +357,60 @@ export const updateDoc = async (docRef: any, data: any) => {
 };
 
 export const addDoc = async (collectionRef: any, data: any) => {
-  const { data: inserted, error } = await supabase.from(collectionRef.table).insert(data).select();
+  console.log(`Adding document to ${collectionRef.table}...`, data);
   
-  if (error) {
-    console.warn(`${collectionRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+  if (!isSupabaseConfigured) {
+    console.log("Supabase not configured, using localStorage for addDoc");
     const localData = getLocalData(collectionRef.table);
-    const newId = crypto.randomUUID();
+    const newId = generateId();
     localData.push({ ...data, id: newId });
     setLocalData(collectionRef.table, localData);
     return { id: newId };
   }
-  
-  return { id: inserted?.[0]?.id || crypto.randomUUID() };
+
+  try {
+    const { data: inserted, error } = await supabase.from(collectionRef.table).insert(data).select();
+    
+    if (error) {
+      console.warn(`${collectionRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+      const localData = getLocalData(collectionRef.table);
+      const newId = generateId();
+      localData.push({ ...data, id: newId });
+      setLocalData(collectionRef.table, localData);
+      return { id: newId };
+    }
+    
+    console.log("Document added successfully to Supabase");
+    return { id: inserted?.[0]?.id || generateId() };
+  } catch (err) {
+    console.error("addDoc exception:", err);
+    const localData = getLocalData(collectionRef.table);
+    const newId = generateId();
+    localData.push({ ...data, id: newId });
+    setLocalData(collectionRef.table, localData);
+    return { id: newId };
+  }
 };
 
 export const deleteDoc = async (docRef: any) => {
-  const { error } = await supabase.from(docRef.table).delete().eq('id', docRef.id);
-  
-  if (error) {
-    console.warn(`${docRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+  if (!isSupabaseConfigured) {
+    let localData = getLocalData(docRef.table);
+    localData = localData.filter((x: any) => x.id !== docRef.id);
+    setLocalData(docRef.table, localData);
+    return;
+  }
+
+  try {
+    const { error } = await supabase.from(docRef.table).delete().eq('id', docRef.id);
+    
+    if (error) {
+      console.warn(`${docRef.table} tablosu için Supabase hatası, yerel depolamaya (localStorage) geçiliyor:`, error.message);
+      let localData = getLocalData(docRef.table);
+      localData = localData.filter((x: any) => x.id !== docRef.id);
+      setLocalData(docRef.table, localData);
+    }
+  } catch (err) {
+    console.error("deleteDoc exception:", err);
     let localData = getLocalData(docRef.table);
     localData = localData.filter((x: any) => x.id !== docRef.id);
     setLocalData(docRef.table, localData);
@@ -303,7 +429,7 @@ export const onSnapshot = (queryRef: any, callback: (snapshot: any) => void, err
         callback(snapshot);
       }
     } catch (err) {
-      console.error(err);
+      console.error("onSnapshot fetch error:", err);
       if (errorCallback) errorCallback(err);
     }
   };
@@ -311,24 +437,35 @@ export const onSnapshot = (queryRef: any, callback: (snapshot: any) => void, err
   // Initial fetch
   fetchAndNotify();
 
-  // Realtime subscription
-  const channel = supabase.channel(`public:${queryRef.table}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: queryRef.table }, () => {
-      fetchAndNotify();
-    })
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        // Successfully subscribed
-      }
-    });
+  let channel: any = null;
+  if (isSupabaseConfigured) {
+    try {
+      // Realtime subscription
+      channel = supabase.channel(`public:${queryRef.table}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: queryRef.table }, () => {
+          fetchAndNotify();
+        })
+        .subscribe((status) => {
+          if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+            console.warn(`Supabase Realtime subscription ${status} for ${queryRef.table}`);
+          }
+        });
+    } catch (e) {
+      console.warn("Supabase Realtime subscription failed:", e);
+    }
+  }
 
-  // Polling fallback for localStorage changes (since Supabase realtime won't trigger for local changes)
+  // Polling fallback for localStorage changes and Supabase failures
   const interval = setInterval(() => {
     fetchAndNotify();
-  }, 2000);
+  }, 3000);
 
   return () => {
-    supabase.removeChannel(channel);
+    if (channel) {
+      try {
+        supabase.removeChannel(channel);
+      } catch (e) {}
+    }
     clearInterval(interval);
   };
 };

@@ -151,8 +151,10 @@ export default function Onboarding() {
                 <form onSubmit={handleAuth} className="space-y-4">
                   {!isLogin && (
                     <div className="relative">
+                      <label htmlFor="fullName" className="sr-only">Ad Soyad</label>
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
                       <input
+                        id="fullName"
                         type="text"
                         placeholder="Ad Soyad"
                         value={fullName}
@@ -163,8 +165,10 @@ export default function Onboarding() {
                     </div>
                   )}
                   <div className="relative">
+                    <label htmlFor="email" className="sr-only">E-posta</label>
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
                     <input
+                      id="email"
                       type="email"
                       placeholder="E-posta"
                       value={email}
@@ -174,8 +178,10 @@ export default function Onboarding() {
                     />
                   </div>
                   <div className="relative">
+                    <label htmlFor="password" className="sr-only">Şifre</label>
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
                     <input
+                      id="password"
                       type="password"
                       placeholder="Şifre"
                       value={password}
