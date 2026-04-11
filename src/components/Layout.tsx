@@ -28,7 +28,6 @@ export default function Layout() {
     { icon: Home, label: "Ana Sayfa", path: "/home" },
     { icon: ShieldCheck, label: "Sigorta & Teklifler", path: "/insurance" },
     { icon: Car, label: "Varlıklarım", path: "/garage" },
-    { icon: Wrench, label: "Bakım Planlama", path: "/maintenance" },
     { icon: Grid, label: "Hizmetler", path: "/services" },
     { icon: User, label: "Ailem & Profil", path: "/profile" },
   ];

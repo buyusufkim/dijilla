@@ -82,6 +82,14 @@ const categories = [
     title: "Araç Bakım",
     items: [
       {
+        icon: Calendar,
+        label: "Bakım Planlama",
+        color: "text-[#00E5FF]",
+        bg: "bg-[#00E5FF]/10",
+        desc: "Aracınızın bakım takvimini yönetin.",
+        link: "/maintenance"
+      },
+      {
         icon: Wrench,
         label: "Oto Servisler",
         color: "text-orange-400",
