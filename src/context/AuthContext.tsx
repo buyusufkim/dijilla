@@ -5,13 +5,9 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut as supabaseSignOut,
-  updateProfile,
-  auth, 
-  db,
-  doc, 
-  setDoc, 
-  getDoc 
+  auth
 } from "@/firebase";
+import { handleProfileCreation, performDemoLogin } from '@/lib/auth-logic';
 
 interface AuthContextType {
   user: User | null;
@@ -62,27 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       
       if (user) {
-        // Update profile - we wrap this in try/catch because if email confirmation is on,
-        // session might not be available yet, and we don't want to block the flow.
-        try {
-          await updateProfile(user, { displayName: fullName });
-        } catch (e) {
-          console.warn("Profil güncellenemedi (oturum henüz hazır olmayabilir):", e);
-        }
-
-        // Create profile document in Firestore - this might also fail if RLS is on and no session
-        // but the adapter will fallback to localStorage.
-        try {
-          await setDoc(doc(db, 'profiles', user.uid), {
-            id: user.uid,
-            full_name: fullName,
-            email: email,
-            points: 0,
-            created_at: new Date().toISOString()
-          });
-        } catch (e) {
-          console.warn("Profil dokümanı oluşturulamadı (yerel depolamaya kaydediliyor olabilir):", e);
-        }
+        await handleProfileCreation(user, fullName, email);
       }
 
       setLoading(false);
@@ -99,37 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const demoLogin = async () => {
     setLoading(true);
-    const demoEmail = 'ahmet.yilmaz@droto.com';
-    const demoPassword = 'demo123456';
-    
-    try {
-      // Try to login with demo user
-      await signInWithEmailAndPassword(auth, demoEmail, demoPassword);
-    } catch (error: any) {
-      // If it fails, check if it's invalid credentials or user not found
-      try {
-        const { user } = await createUserWithEmailAndPassword(auth, demoEmail, demoPassword);
-        await updateProfile(user, { displayName: 'Ahmet Yılmaz' });
-        await setDoc(doc(db, 'profiles', user.uid), {
-          id: user.uid,
-          full_name: 'Ahmet Yılmaz',
-          email: demoEmail,
-          points: 1500,
-          created_at: new Date().toISOString()
-        });
-        
-        // Seed demo data
-        const { seedDemoData } = await import('@/lib/seed');
-        await seedDemoData(user.uid);
-      } catch (e: any) {
-        console.error("Demo girişi başarısız", e);
-        // If user already exists but password was wrong, or trigger failed, we might still be able to login if we reset or just show error
-        if (e.message?.includes('already registered')) {
-           // Try one more time to login, maybe it was a race condition
-           await signInWithEmailAndPassword(auth, demoEmail, demoPassword).catch(console.error);
-        }
-      }
-    }
+    await performDemoLogin();
     setLoading(false);
   };
 

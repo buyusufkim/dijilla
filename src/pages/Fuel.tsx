@@ -2,98 +2,28 @@ import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   ArrowLeft, 
-  Fuel as FuelIcon, 
   MapPin, 
-  Navigation, 
-  Star, 
   Filter, 
   Search, 
-  ChevronRight,
   Zap,
   Droplets,
-  DollarSign,
   Clock,
-  Car,
   Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase";
 import { collection, query, where, onSnapshot } from "@/firebase";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
+import { Station, getDistanceFromLatLonInKm, DefaultIcon } from "@/components/fuel/types";
+import { VehicleSelector } from "@/components/fuel/VehicleSelector";
+import { CompanyPrices } from "@/components/fuel/CompanyPrices";
+import { StationCard } from "@/components/fuel/StationCard";
+import { MapSection } from "@/components/fuel/MapSection";
+
 // Fix Leaflet marker icon issue
-const DefaultIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
 L.Marker.prototype.options.icon = DefaultIcon;
-
-const UserIcon = L.divIcon({
-  className: 'custom-div-icon',
-  html: `<div style="background-color: #00E5FF; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #00E5FF;"></div>`,
-  iconSize: [12, 12],
-  iconAnchor: [6, 6]
-});
-
-const StationIcon = (type: "fuel" | "electric") => L.divIcon({
-  className: 'custom-div-icon',
-  html: `<div style="background-color: ${type === 'fuel' ? '#00E5FF' : '#FFD600'}; width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div>`,
-  iconSize: [10, 10],
-  iconAnchor: [5, 5]
-});
-
-type Station = {
-  id: string;
-  name: string;
-  distance: string;
-  distanceValue: number;
-  prices?: {
-    benzin: string;
-    motorin: string;
-    lpg: string;
-  };
-  price?: string; // for electric
-  priceValue: number;
-  rating: number;
-  type: "fuel" | "electric";
-  status: "open" | "closed";
-  address: string;
-  lat: number;
-  lon: number;
-};
-
-// Component to recenter map when location changes
-function RecenterMap({ center }: { center: [number, number] }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center);
-  }, [center, map]);
-  return null;
-}
-
-// Haversine distance calculation
-function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const d = R * c; // Distance in km
-  return d;
-}
-
-function deg2rad(deg: number) {
-  return deg * (Math.PI / 180);
-}
 
 export default function Fuel() {
   const navigate = useNavigate();
@@ -417,29 +347,11 @@ export default function Fuel() {
       )}
 
       {/* Vehicle Selector */}
-      {vehicles.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {vehicles.map((v) => (
-            <button
-              key={v.id}
-              onClick={() => handleVehicleChange(v.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl whitespace-nowrap transition-colors ${
-                selectedVehicleId === v.id
-                  ? "bg-[#00E5FF]/20 border border-[#00E5FF]/50 text-[#00E5FF]"
-                  : "bg-[#1A233A] border border-white/10 text-white/60 hover:bg-white/5"
-              }`}
-            >
-              <Car className="w-4 h-4" />
-              <span className="text-sm font-medium">{v.plate}</span>
-              {v.fuel_type && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80">
-                  {v.fuel_type}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      <VehicleSelector 
+        vehicles={vehicles} 
+        selectedVehicleId={selectedVehicleId} 
+        onVehicleChange={handleVehicleChange} 
+      />
 
       {/* Search */}
       <div className="relative">
@@ -512,108 +424,10 @@ export default function Fuel() {
       </div>
 
       {/* Map Preview */}
-      <Card className="bg-[#1A233A] border-white/10 overflow-hidden h-64 relative z-0">
-        {userLocation ? (
-          <MapContainer 
-            center={[userLocation.lat, userLocation.lon]} 
-            zoom={13} 
-            style={{ height: '100%', width: '100%' }}
-            zoomControl={false}
-          >
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            />
-            <RecenterMap center={[userLocation.lat, userLocation.lon]} />
-            <Marker position={[userLocation.lat, userLocation.lon]} icon={UserIcon}>
-              <Popup>Konumunuz</Popup>
-            </Marker>
-            {filteredStations.map(station => (
-              <Marker 
-                key={station.id} 
-                position={[station.lat, station.lon]} 
-                icon={StationIcon(station.type)}
-              >
-                <Popup>
-                  <div className="text-navy">
-                    <p className="font-bold">{station.name}</p>
-                    <p className="text-xs">{station.address}</p>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="w-8 h-8 text-[#00E5FF] animate-spin" />
-              <span className="text-xs font-medium text-white/60">Konum Aranıyor...</span>
-            </div>
-          </div>
-        )}
-      </Card>
+      <MapSection userLocation={userLocation} filteredStations={filteredStations} />
 
       {/* Company Prices Section */}
-      {activeTab === "fuel" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex flex-col">
-              <h2 className="text-sm font-medium text-white/60 uppercase tracking-wider">Şirket Bazlı Fiyatlar</h2>
-              <p className="text-[10px] text-[#00E5FF] mt-0.5">
-                {locationInfo ? `${locationInfo.city}, ${locationInfo.district} için güncel liste` : "Konum belirleniyor..."}
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4">
-            {[
-              { name: "Opet", logo: "https://www.opet.com.tr/assets/images/logo.png", color: "#005CAB" },
-              { name: "Shell", logo: "https://www.shell.com.tr/etc.clientlibs/shell/clientlibs/clientlib-site/resources/resources/logos/shell-logo.svg", color: "#FBCE07" },
-              { name: "Petrol Ofisi", logo: "https://www.petrolofisi.com.tr/assets/images/po-logo.png", color: "#E30613" },
-              { name: "Aytemiz", logo: "https://www.aytemiz.com.tr/assets/images/logo.png", color: "#F39200" },
-              { name: "GO", logo: "https://www.yakitgo.com.tr/assets/images/logo.png", color: "#82BC00" },
-              { name: "TotalEnergies", logo: "https://totalenergies.com.tr/themes/custom/totalenergies/logo.svg", color: "#ED1C24" },
-              { name: "TP", logo: "https://www.tppd.com.tr/assets/images/logo.png", color: "#E30613" }
-            ].map((company, idx) => {
-              // Generate slightly different prices for each company
-              const benzin = 43.50 + (idx * 0.05);
-              const motorin = 42.10 + (idx * 0.03);
-              const lpg = 21.90 + (idx * 0.02);
-              
-              return (
-                <Card key={company.name} className="bg-[#1A233A] border-white/5 overflow-hidden min-w-[280px]">
-                  <CardContent className="p-4 flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center p-2 shrink-0">
-                        <span className="text-[8px] font-bold text-center leading-tight">{company.name}</span>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-sm">{company.name}</h3>
-                        <p className="text-[10px] text-white/40">Resmi Liste Fiyatı</p>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="text-center p-2 bg-white/5 rounded-lg">
-                        <p className="text-[8px] text-white/40 uppercase mb-1">Benzin</p>
-                        <p className="text-[11px] font-bold text-[#00E676]">{benzin.toFixed(2)}</p>
-                      </div>
-                      <div className="text-center p-2 bg-white/5 rounded-lg">
-                        <p className="text-[8px] text-white/40 uppercase mb-1">Motorin</p>
-                        <p className="text-[11px] font-bold text-[#00E676]">{motorin.toFixed(2)}</p>
-                      </div>
-                      <div className="text-center p-2 bg-white/5 rounded-lg">
-                        <p className="text-[8px] text-white/40 uppercase mb-1">LPG</p>
-                        <p className="text-[11px] font-bold text-[#00E676]">{lpg.toFixed(2)}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <CompanyPrices activeTab={activeTab} locationInfo={locationInfo} />
 
       {/* Stations List */}
       <div className="space-y-4">
@@ -634,50 +448,7 @@ export default function Fuel() {
             </div>
           ) : filteredStations.length > 0 ? (
             filteredStations.map((station) => (
-              <motion.div
-                key={station.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <Card className="bg-[#1A233A] border-white/10 hover:border-[#00E5FF]/30 transition-all group overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col gap-3 mb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#00E5FF]/10 flex items-center justify-center shrink-0">
-                            {station.type === "fuel" ? <FuelIcon className="w-5 h-5 text-[#00E5FF]" /> : <Zap className="w-5 h-5 text-[#FFD600]" />}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold">{station.name}</h3>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <Star className="w-3 h-3 text-[#FFD600] fill-[#FFD600]" />
-                              <span className="text-xs text-white/60">{station.rating.toFixed(1)}</span>
-                              <span className="text-white/20">•</span>
-                              <span className="text-xs text-white/60">{station.distance}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2 px-1">
-                        <MapPin className="w-3.5 h-3.5 text-white/30 mt-0.5 shrink-0" />
-                        <p className="text-xs text-white/50 leading-relaxed">{station.address}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 pt-3 border-t border-white/5">
-                      <Button 
-                        onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lon}`, '_blank')}
-                        className="flex-1 bg-[#00E5FF]/10 hover:bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/20 rounded-xl gap-2"
-                      >
-                        <Navigation className="w-4 h-4" />
-                        Yol Tarifi
-                      </Button>
-                      <Button variant="ghost" className="p-2 hover:bg-white/5 rounded-xl">
-                        <ChevronRight className="w-5 h-5 text-white/40" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+              <StationCard key={station.id} station={station} />
             ))
           ) : (
             <div className="text-center py-12 text-white/50">
