@@ -330,36 +330,42 @@ export type Database = {
         Row: {
           id: string
           user_id: string
-          license_plate: string
-          chassis_number: string | null
-          engine_number: string | null
-          brand: string
-          model: string
-          year: number
+          plate: string
+          brand_model: string
+          year: number | null
+          fuel_type: string | null
+          mileage: number | null
+          insurance_expiry: string | null
+          inspection_expiry: string | null
+          tax_status: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          license_plate: string
-          chassis_number?: string | null
-          engine_number?: string | null
-          brand: string
-          model: string
-          year: number
+          plate: string
+          brand_model: string
+          year?: number | null
+          fuel_type?: string | null
+          mileage?: number | null
+          insurance_expiry?: string | null
+          inspection_expiry?: string | null
+          tax_status?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          license_plate?: string
-          chassis_number?: string | null
-          engine_number?: string | null
-          brand?: string
-          model?: string
-          year?: number
+          plate?: string
+          brand_model?: string
+          year?: number | null
+          fuel_type?: string | null
+          mileage?: number | null
+          insurance_expiry?: string | null
+          inspection_expiry?: string | null
+          tax_status?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -411,12 +417,14 @@ export enum CheckoutStatus {
 export interface VehicleDTO {
   id: string
   user_id: string
-  license_plate: string
-  chassis_number: string
-  engine_number: string
-  brand: string
-  model: string
-  year: number
+  plate: string
+  brand_model: string
+  year: number | null
+  fuel_type: string | null
+  mileage: number | null
+  insurance_expiry: string | null
+  inspection_expiry: string | null
+  tax_status: string | null
   created_at: string
 }
 

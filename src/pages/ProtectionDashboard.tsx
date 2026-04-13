@@ -67,8 +67,8 @@ export default function ProtectionDashboard() {
       orderBy("expense_date", "desc")
     );
 
-    const unsubscribe = onSnapshot(qExpenses, (snapshot) => {
-      const expenseData = snapshot.docs.map(doc => doc.data() as Expense);
+    const unsubscribe = onSnapshot(qExpenses, (snapshot: any) => {
+      const expenseData = snapshot.docs.map((doc: any) => doc.data() as Expense);
       setExpenses(expenseData);
       setLoading(false);
     });

@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import quotesRouter from "./routes/quotes.routes.js";
 import checkoutsRouter from "./routes/checkouts.routes.js";
+import aiRouter from "./routes/ai.routes.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get("/api/health", (req: Request, res: Response) => {
 // Routes
 app.use("/api/quotes", quotesRouter);
 app.use("/api/checkouts", checkoutsRouter);
+app.use("/api/ai", aiRouter);
 
 // 404 Handler for API routes
 app.use("/api", (req: Request, res: Response) => {

@@ -84,7 +84,7 @@ export const seedDemoData = async (userId: string) => {
     ];
 
     for (const a of appointmentData) {
-      await addDoc(collection(db, 'maintenance_appointments'), a);
+      await addDoc(collection(db, 'appointments'), a);
     }
 
     // 4. Insert Expenses

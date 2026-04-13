@@ -9,22 +9,18 @@ export type FamilyMember = {
 
 interface FamilyContextType {
   members: FamilyMember[];
-  activeMember: FamilyMember;
-  setActiveMember: (member: FamilyMember) => void;
+  activeMember: FamilyMember | null;
+  setActiveMember: (member: FamilyMember | null) => void;
   addMember: (member: FamilyMember) => void;
 }
 
-const defaultMembers: FamilyMember[] = [
-  { id: "1", name: "Ahmet Yılmaz", role: "self", avatarColor: "from-[#00E5FF] to-blue-600" },
-  { id: "2", name: "Ayşe Yılmaz", role: "spouse", avatarColor: "from-purple-500 to-pink-500" },
-  { id: "3", name: "Can Yılmaz", role: "child", avatarColor: "from-[#00E676] to-emerald-600" },
-];
+const defaultMembers: FamilyMember[] = [];
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 
 export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<FamilyMember[]>(defaultMembers);
-  const [activeMember, setActiveMember] = useState<FamilyMember>(defaultMembers[0]);
+const [activeMember, setActiveMember] = useState<FamilyMember | null>(defaultMembers[0] ?? null);
 
   const addMember = (member: FamilyMember) => {
     setMembers((prev) => [...prev, member]);

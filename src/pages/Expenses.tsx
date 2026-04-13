@@ -58,14 +58,14 @@ export default function Expenses() {
       orderBy("expense_date", "desc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const expenseData = snapshot.docs.map(doc => ({
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      const expenseData = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       })) as Expense[];
       setExpenses(expenseData);
       setLoading(false);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Error fetching expenses:", error);
       setLoading(false);
     });

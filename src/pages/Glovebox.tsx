@@ -64,14 +64,14 @@ export default function Glovebox() {
       orderBy("created_at", "desc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docData = snapshot.docs.map(doc => ({
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      const docData = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       })) as Document[];
       setDocuments(docData);
       setLoading(false);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Error fetching documents:", error);
       setLoading(false);
     });

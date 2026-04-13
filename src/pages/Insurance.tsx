@@ -149,6 +149,7 @@ function AssetSelection({
   }, [category, user]);
 
   const fetchVehicles = async () => {
+    if (!user) return;
     try {
       const q = query(
         collection(db, "vehicles"),
@@ -156,7 +157,7 @@ function AssetSelection({
         orderBy("created_at", "desc")
       );
       const querySnapshot = await getDocs(q);
-      const vehicleData = querySnapshot.docs.map(doc => ({
+      const vehicleData = querySnapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       }));

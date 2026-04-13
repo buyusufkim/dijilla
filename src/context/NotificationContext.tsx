@@ -22,34 +22,7 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      title: "Poliçe Yenileme Hatırlatması",
-      message: "34 ABC 123 plakalı aracınızın kaskosu 15 gün içinde sona erecektir. Yenilemek için tıklayın.",
-      type: "warning",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      read: false,
-      link: "/insurance",
-    },
-    {
-      id: "2",
-      title: "Muayene Yaklaşıyor",
-      message: "Aracınızın muayene tarihi 10 gün sonra. Randevu almayı unutmayın.",
-      type: "info",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-      read: false,
-      link: "/services",
-    },
-    {
-      id: "3",
-      title: "Yeni Hizmet: Yol Yardım+",
-      message: "Artık tüm Türkiye'de 7/24 yol yardım hizmetimiz aktif!",
-      type: "success",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 48), // 2 days ago
-      read: true,
-    }
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 

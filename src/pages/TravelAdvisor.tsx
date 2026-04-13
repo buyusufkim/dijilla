@@ -10,7 +10,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase";
 import { collection, query, where, onSnapshot } from "@/firebase";
-import { GoogleGenAI, Type } from "@google/genai";
+import { aiService } from "@/services/aiService";
 
 import { TravelHeader } from "@/components/travel/TravelHeader";
 import { VehicleSelector } from "@/components/travel/VehicleSelector";
@@ -69,7 +69,7 @@ export default function TravelAdvisor() {
     };
     document.head.appendChild(script);
 
-    window.gm_authFailure = () => {
+    (window as any).gm_authFailure = () => {
       console.error("Google Maps authentication failure (likely API key or enabled APIs issue)");
       setGoogleMapsError("Google Maps API hatası: 'Places API (Legacy)' servisinin Google Cloud Console üzerinden etkinleştirildiğinden emin olun.");
     };
@@ -78,8 +78,8 @@ export default function TravelAdvisor() {
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, "vehicles"), where("user_id", "==", user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const vData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      const vData = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as any[];
       setVehicles(vData);
       if (vData.length > 0 && !selectedVehicle) {
         setSelectedVehicle(vData[0]);
@@ -142,12 +142,10 @@ export default function TravelAdvisor() {
     setGroundingLinks([]);
     
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
       const prompt = `Plan a route from ${startLocation} to ${endLocation} for a vehicle with these specs:
       Plate: ${selectedVehicle.plate}
       Fuel Type: ${selectedVehicle.fuel_type}
-      Brand/Model: ${selectedVehicle.brand} ${selectedVehicle.model}
+      Brand/Model: ${selectedVehicle.brand_model}
       
       Please include:
       1. Current distance and estimated duration considering REAL-TIME TRAFFIC.
@@ -161,42 +159,7 @@ export default function TravelAdvisor() {
       
       Return the response in JSON format.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              distance: { type: Type.STRING },
-              totalKm: { type: Type.NUMBER },
-              duration: { type: Type.STRING },
-              trafficStatus: { type: Type.STRING },
-              trafficDelay: { type: Type.STRING },
-              fuelStatus: { type: Type.STRING, enum: ["ok", "critical"] },
-              estimatedCost: { type: Type.STRING },
-              averageFuelConsumption: { type: Type.STRING },
-              stops: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    id: { type: Type.NUMBER },
-                    type: { type: Type.STRING, enum: ["fuel", "rest", "food"] },
-                    name: { type: Type.STRING },
-                    distance: { type: Type.STRING },
-                    time: { type: Type.STRING }
-                  },
-                  required: ["id", "type", "name", "distance", "time"]
-                }
-              }
-            },
-            required: ["distance", "totalKm", "duration", "trafficStatus", "fuelStatus", "estimatedCost", "averageFuelConsumption", "stops"]
-          },
-          tools: [{ googleSearch: {} }]
-        }
-      });
+      const response = await aiService.generateTravelRoute(prompt);
 
       const result = JSON.parse(response.text || "{}");
       
@@ -221,7 +184,7 @@ export default function TravelAdvisor() {
 
       setRoutePlan({ ...result, stops: stopsWithIcons });
       
-      const groundingMetadata = response.candidates?.[0]?.groundingMetadata;
+      const groundingMetadata = response.groundingMetadata;
       const chunks = groundingMetadata?.groundingChunks;
       if (chunks) {
         const links = chunks

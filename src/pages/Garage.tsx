@@ -48,14 +48,14 @@ export default function Garage() {
       orderBy("created_at", "desc")
     );
 
-    const unsubscribeVehicles = onSnapshot(qVehicles, (snapshot) => {
-      const vehicleData = snapshot.docs.map(doc => ({
+    const unsubscribeVehicles = onSnapshot(qVehicles, (snapshot: any) => {
+      const vehicleData = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       })) as Vehicle[];
       setVehicles(vehicleData);
       setLoading(false);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Error fetching vehicles:", error);
       setLoading(false);
     });
@@ -66,13 +66,13 @@ export default function Garage() {
       orderBy("created_at", "desc")
     );
 
-    const unsubscribeHomes = onSnapshot(qHomes, (snapshot) => {
-      const homeData = snapshot.docs.map(doc => ({
+    const unsubscribeHomes = onSnapshot(qHomes, (snapshot: any) => {
+      const homeData = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       })) as HomeAsset[];
       setHomes(homeData);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Error fetching homes:", error);
     });
 
@@ -82,13 +82,13 @@ export default function Garage() {
       orderBy("date", "desc")
     );
 
-    const unsubscribeMaintenance = onSnapshot(qMaintenance, (snapshot) => {
-      const records = snapshot.docs.map(doc => ({
+    const unsubscribeMaintenance = onSnapshot(qMaintenance, (snapshot: any) => {
+      const records = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       }));
       setMaintenanceRecords(records);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Error fetching maintenance:", error);
     });
 
@@ -110,8 +110,6 @@ export default function Garage() {
           user_id: user.uid,
           plate: assetName,
           brand_model: `${brand} ${model}`,
-          brand: brand,
-          model: model,
           year: Number(year),
           mileage: Number(mileage),
           fuel_type: fuelType,

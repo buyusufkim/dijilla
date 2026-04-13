@@ -28,6 +28,34 @@ export const serverTimestamp = () => {
   return new Date().toISOString();
 };
 
+const verifiedProfiles = new Set<string>();
+
+const ensureProfileExists = async (userId: any): Promise<boolean> => {
+  if (!userId || typeof userId !== 'string') return false;
+  
+  // Basic UUID check to prevent Supabase errors for mock IDs
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(userId)) return false;
+
+  if (verifiedProfiles.has(userId)) return true;
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+    
+    if (data && !error) {
+      verifiedProfiles.add(userId);
+      return true;
+    }
+    return false;
+  } catch (err) {
+    return false;
+  }
+};
+
 const applyConstraints = (queryBuilder: any, constraints: any[]) => {
   let q = queryBuilder;
   for (const c of constraints) {
@@ -159,6 +187,22 @@ export const setDoc = async (docRef: any, data: any, options?: { merge?: boolean
     return;
   }
 
+  // Ensure profile exists for tables with user_id FK (except profiles itself)
+  if (docRef.table !== 'profiles' && data.user_id) {
+    const profileExists = await ensureProfileExists(data.user_id);
+    if (!profileExists) {
+      const localData = getLocalData(docRef.table);
+      const index = localData.findIndex((x: any) => x.id === docRef.id);
+      if (index >= 0) {
+        localData[index] = { ...localData[index], ...data, id: docRef.id };
+      } else {
+        localData.push({ ...data, id: docRef.id });
+      }
+      setLocalData(docRef.table, localData);
+      return;
+    }
+  }
+
   try {
     const { error } = await supabase.from(docRef.table).upsert({ id: docRef.id, ...data });
     
@@ -229,6 +273,18 @@ export const addDoc = async (collectionRef: any, data: any) => {
     return { id: newId };
   }
 
+  // Ensure profile exists for tables with user_id FK (except profiles itself)
+  if (collectionRef.table !== 'profiles' && data.user_id) {
+    const profileExists = await ensureProfileExists(data.user_id);
+    if (!profileExists) {
+      const localData = getLocalData(collectionRef.table);
+      const newId = generateId();
+      localData.push({ ...data, id: newId });
+      setLocalData(collectionRef.table, localData);
+      return { id: newId };
+    }
+  }
+
   try {
     const { data: inserted, error } = await supabase.from(collectionRef.table).insert(data).select();
     
@@ -277,8 +333,12 @@ export const deleteDoc = async (docRef: any) => {
   }
 };
 
-export const onSnapshot = (queryRef: any, callback: (snapshot: any) => void, errorCallback?: (error: any) => void) => {
-  let lastDataString = '';
+export const onSnapshot = (
+  queryRef: any,
+  callback: (snapshot: any) => void,
+  errorCallback?: (error: any) => void
+) => {
+  let lastDataString = "";
 
   const fetchAndNotify = async () => {
     try {
@@ -297,25 +357,42 @@ export const onSnapshot = (queryRef: any, callback: (snapshot: any) => void, err
   fetchAndNotify();
 
   let channel: any = null;
+  let interval: ReturnType<typeof setInterval> | null = null;
+
   if (isSupabaseConfigured) {
     try {
-      channel = supabase.channel(`public:${queryRef.table}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: queryRef.table }, () => {
-          fetchAndNotify();
-        })
+      channel = supabase
+        .channel(`public:${queryRef.table}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: queryRef.table },
+          () => {
+            fetchAndNotify();
+          }
+        )
         .subscribe((status) => {
-          if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+          if (status === "TIMED_OUT" || status === "CHANNEL_ERROR") {
             console.warn(`Supabase Realtime subscription ${status} for ${queryRef.table}`);
+
+            if (!interval) {
+              interval = setInterval(() => {
+                fetchAndNotify();
+              }, 10000);
+            }
           }
         });
     } catch (e) {
       console.warn("Supabase Realtime subscription failed:", e);
-    }
-  }
 
-  const interval = setInterval(() => {
-    fetchAndNotify();
-  }, 3000);
+      interval = setInterval(() => {
+        fetchAndNotify();
+      }, 10000);
+    }
+  } else {
+    interval = setInterval(() => {
+      fetchAndNotify();
+    }, 10000);
+  }
 
   return () => {
     if (channel) {
@@ -323,6 +400,9 @@ export const onSnapshot = (queryRef: any, callback: (snapshot: any) => void, err
         supabase.removeChannel(channel);
       } catch (e) {}
     }
-    clearInterval(interval);
+
+    if (interval) {
+      clearInterval(interval);
+    }
   };
 };

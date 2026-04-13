@@ -49,28 +49,28 @@ export default function Home() {
       orderBy("created_at", "desc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const vehicleData = snapshot.docs.map(doc => ({
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      const vehicleData = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       }));
       setVehicles(vehicleData);
       setLoadingVehicles(false);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Error fetching vehicles:", error);
       setLoadingVehicles(false);
     });
 
     // Subscribe to Maintenance Appointments
     const maQuery = query(
-      collection(db, "maintenance_appointments"),
+      collection(db, "appointments"),
       where("user_id", "==", user.uid),
       where("status", "==", "scheduled"),
       orderBy("appointment_date", "asc")
     );
 
-    const unsubscribeMA = onSnapshot(maQuery, (snapshot) => {
-      setMaintenanceAppointments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const unsubscribeMA = onSnapshot(maQuery, (snapshot: any) => {
+      setMaintenanceAppointments(snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })));
     });
 
     return () => {
@@ -93,8 +93,13 @@ export default function Home() {
   const criticalNotification = notifications.find(n => n.type === "warning" && !n.read);
   const upcomingMaintenance = maintenanceAppointments[0];
   
-  const displayName = profile?.full_name?.split(" ")[0] || user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || activeMember.name.split(" ")[0];
-
+  const displayName =
+  profile?.full_name?.split(" ")[0] ||
+  user?.displayName?.split(" ")[0] ||
+  user?.email?.split("@")[0] ||
+  activeMember?.name?.split(" ")[0] ||
+  "Sürücü";
+  
   return (
     <div className="flex flex-col gap-8 pb-12 w-full overflow-x-hidden">
       <DashboardHeader 

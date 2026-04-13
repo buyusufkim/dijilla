@@ -51,7 +51,7 @@ export default function VehicleDetail() {
         } else {
           // Fallback to query if getDoc fails in adapter
           const q = query(collection(db, "vehicles"), where("id", "==", id));
-          const unsubscribe = onSnapshot(q, (snapshot) => {
+          const unsubscribe = onSnapshot(q, (snapshot: any) => {
             if (!snapshot.empty) {
               setVehicle({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Vehicle);
             }
@@ -72,28 +72,28 @@ export default function VehicleDetail() {
       orderBy("date", "asc")
     );
 
-    const unsubscribeMaintenance = onSnapshot(qMaintenance, (snapshot) => {
-      const records = snapshot.docs.map(doc => ({
+    const unsubscribeMaintenance = onSnapshot(qMaintenance, (snapshot: any) => {
+      const records = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       })) as MaintenanceRecord[];
       setMaintenanceRecords(records);
       setLoading(false);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Bakım kayıtları alınırken hata:", error);
       setLoading(false);
     });
 
     // Fetch appointments
     const qAppointments = query(
-      collection(db, "maintenance_appointments"),
+      collection(db, "appointments"),
       where("vehicle_id", "==", id),
       where("status", "==", "scheduled"),
       orderBy("appointment_date", "asc")
     );
 
-    const unsubscribeAppointments = onSnapshot(qAppointments, (snapshot) => {
-      const appointmentData = snapshot.docs.map(doc => ({
+    const unsubscribeAppointments = onSnapshot(qAppointments, (snapshot: any) => {
+      const appointmentData = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       })) as Appointment[];
@@ -107,8 +107,8 @@ export default function VehicleDetail() {
       orderBy("date", "asc")
     );
 
-    const unsubscribeReminders = onSnapshot(qReminders, (snapshot) => {
-      const reminderData = snapshot.docs.map(doc => ({
+    const unsubscribeReminders = onSnapshot(qReminders, (snapshot: any) => {
+      const reminderData = snapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       })) as Reminder[];

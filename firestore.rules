@@ -153,8 +153,8 @@ service cloud.firestore {
       allow delete: if isDocOwner();
     }
 
-    // Maintenance Appointments
-    match /maintenance_appointments/{appointmentId} {
+    // Appointments
+    match /appointments/{appointmentId} {
       allow read: if isAuthenticated() && (resource == null || resource.data.user_id == request.auth.uid);
       allow create: if isRequestOwner();
       allow update: if isDocOwner() && isRequestOwner();

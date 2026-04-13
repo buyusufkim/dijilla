@@ -64,8 +64,8 @@ export default function Fuel() {
   useEffect(() => {
     if (!user) return;
     const q = query(collection(db, "vehicles"), where("user_id", "==", user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const vData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      const vData = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as any[];
       setVehicles(vData);
       if (vData.length > 0 && !selectedVehicleId) {
         setSelectedVehicleId(vData[0].id);

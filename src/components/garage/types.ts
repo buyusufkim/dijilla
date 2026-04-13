@@ -2,8 +2,6 @@ export type Vehicle = {
   id: string;
   plate: string;
   brand_model: string;
-  brand?: string;
-  model?: string;
   year: number;
   mileage?: number;
   insurance_expiry: string;

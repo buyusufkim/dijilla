@@ -104,9 +104,9 @@
       },
       "required": ["user_id", "vehicle_id", "service_type", "date"]
     },
-    "MaintenanceAppointment": {
-      "title": "Maintenance Appointment",
-      "description": "A future maintenance appointment.",
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A future appointment.",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -161,9 +161,9 @@
       "schema": "MaintenanceRecord",
       "description": "Past maintenance records."
     },
-    "/maintenance_appointments/{appointmentId}": {
-      "schema": "MaintenanceAppointment",
-      "description": "Scheduled maintenance appointments."
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Scheduled appointments."
     },
     "/reminders/{reminderId}": {
       "schema": "Reminder",
