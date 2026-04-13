@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  User, 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  User,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut as supabaseSignOut,
   auth
 } from "@/firebase";
-import { handleProfileCreation, performDemoLogin } from '@/lib/auth-logic';
+import { performDemoLogin } from '@/lib/auth-logic';
 
 interface AuthContextType {
   user: User | null;
@@ -32,8 +32,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser);
       setLoading(false);
     });
 
@@ -55,12 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUpWithEmail = async (email: string, password: string, fullName: string) => {
     setLoading(true);
     try {
-      const { user } = await createUserWithEmailAndPassword(auth, email, password);
-      
-      if (user) {
-        await handleProfileCreation(user, fullName, email);
-      }
-
+      await createUserWithEmailAndPassword(auth, email, password);
       setLoading(false);
       return { error: null };
     } catch (error) {
