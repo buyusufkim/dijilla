@@ -153,6 +153,7 @@ export const signInWithEmailAndPassword = async (
     return { user: mockUser };
   }
 
+  // Clear any existing mock session before real login
   clearStoredMockUser();
   clearDataScope();
 
@@ -173,7 +174,8 @@ export const signInWithEmailAndPassword = async (
 export const createUserWithEmailAndPassword = async (
   authInstance: any,
   email: string,
-  password: string
+  password: string,
+  fullName?: string
 ) => {
   if (isDemoLogin(email)) {
     console.log('Using mock signup for demo.');
@@ -181,7 +183,7 @@ export const createUserWithEmailAndPassword = async (
     const mockUser: User = {
       uid: MOCK_USER_ID,
       email,
-      displayName: null,
+      displayName: fullName || null,
       photoURL: null,
     };
 
@@ -192,26 +194,34 @@ export const createUserWithEmailAndPassword = async (
     return { user: mockUser };
   }
 
+  // Clear any existing mock session before real signup
   clearStoredMockUser();
   clearDataScope();
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        full_name: fullName,
+      },
+    },
   });
   if (error) throw error;
 
   const user: User = {
     uid: data.user!.id,
     email: data.user!.email || null,
-    displayName: null,
-    photoURL: null,
+    displayName: data.user!.user_metadata?.full_name || null,
+    photoURL: data.user!.user_metadata?.avatar_url || null,
   };
 
+  // Only notify listeners if we have a session (auto-login enabled)
   if (data.session?.user) {
     setScopeForUser(user);
     notifyAuthListeners(user);
   } else {
+    // If no session, user might need to verify email
     setScopeForUser(null);
   }
 

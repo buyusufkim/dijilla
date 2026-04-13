@@ -35,6 +35,7 @@ export default function Onboarding() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Redirect if already logged in
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function Onboarding() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccessMessage("");
 
     let result;
     if (isLogin) {
@@ -69,7 +71,12 @@ export default function Onboarding() {
       }
       setError(errorMessage);
     } else {
-      navigate("/home");
+      if (result.requiresEmailVerification) {
+        setSuccessMessage("Kayıt oluşturuldu. Giriş yapmadan önce e-posta adresini doğrula.");
+        setIsLogin(true);
+      } else {
+        navigate("/home");
+      }
     }
   };
 
@@ -259,6 +266,17 @@ export default function Onboarding() {
                     >
                       <AlertTriangle className="w-5 h-5 shrink-0" />
                       {error}
+                    </motion.div>
+                  )}
+
+                  {successMessage && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 mb-6 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm flex items-start gap-3"
+                    >
+                      <ShieldCheck className="w-5 h-5 shrink-0" />
+                      {successMessage}
                     </motion.div>
                   )}
 

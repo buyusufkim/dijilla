@@ -1,6 +1,11 @@
 import { supabase } from '../../supabase';
 import { isSupabaseConfigured } from './config';
-import { getLocalData, setLocalData, generateId } from './fallback';
+import { getLocalData, setLocalData, generateId, subscribeLocalDbChange } from './fallback';
+
+const isDemoMode = () => {
+  if (typeof window === 'undefined') return false;
+  return !!localStorage.getItem('droto_mock_user');
+};
 
 export const db = {};
 
@@ -74,8 +79,28 @@ const applyConstraints = (queryBuilder: any, constraints: any[]) => {
 };
 
 export const getDocs = async (queryRef: any) => {
-  if (!isSupabaseConfigured) {
-    const localData = getLocalData(queryRef.table);
+  if (!isSupabaseConfigured || isDemoMode()) {
+    let localData = getLocalData(queryRef.table);
+    
+    if (queryRef.constraints) {
+      for (const c of queryRef.constraints) {
+        if (c.type === 'where' && c.op === '==') {
+          localData = localData.filter((item: any) => item[c.field] === c.value);
+        }
+      }
+      
+      const orderByConstraint = queryRef.constraints.find((c: any) => c.type === 'orderBy');
+      if (orderByConstraint) {
+        localData.sort((a: any, b: any) => {
+          const valA = a[orderByConstraint.field];
+          const valB = b[orderByConstraint.field];
+          if (valA < valB) return orderByConstraint.direction === 'asc' ? -1 : 1;
+          if (valA > valB) return orderByConstraint.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }
+    }
+
     return {
       docs: localData.map((row: any) => ({ id: row.id, data: () => row })),
       empty: localData.length === 0,
@@ -139,7 +164,7 @@ export const getDocs = async (queryRef: any) => {
 };
 
 export const getDoc = async (docRef: any) => {
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured || isDemoMode()) {
     const localData = getLocalData(docRef.table);
     const item = localData.find((x: any) => x.id === docRef.id);
     return { id: docRef.id, exists: () => !!item, data: () => item };
@@ -175,7 +200,7 @@ export const getDoc = async (docRef: any) => {
 };
 
 export const setDoc = async (docRef: any, data: any, options?: { merge?: boolean }) => {
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured || isDemoMode()) {
     const localData = getLocalData(docRef.table);
     const index = localData.findIndex((x: any) => x.id === docRef.id);
     if (index >= 0) {
@@ -231,7 +256,7 @@ export const setDoc = async (docRef: any, data: any, options?: { merge?: boolean
 };
 
 export const updateDoc = async (docRef: any, data: any) => {
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured || isDemoMode()) {
     const localData = getLocalData(docRef.table);
     const index = localData.findIndex((x: any) => x.id === docRef.id);
     if (index >= 0) {
@@ -265,7 +290,7 @@ export const updateDoc = async (docRef: any, data: any) => {
 };
 
 export const addDoc = async (collectionRef: any, data: any) => {
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured || isDemoMode()) {
     const localData = getLocalData(collectionRef.table);
     const newId = generateId();
     localData.push({ ...data, id: newId });
@@ -309,7 +334,7 @@ export const addDoc = async (collectionRef: any, data: any) => {
 };
 
 export const deleteDoc = async (docRef: any) => {
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured || isDemoMode()) {
     let localData = getLocalData(docRef.table);
     localData = localData.filter((x: any) => x.id !== docRef.id);
     setLocalData(docRef.table, localData);
@@ -358,8 +383,9 @@ export const onSnapshot = (
 
   let channel: any = null;
   let interval: ReturnType<typeof setInterval> | null = null;
+  let unsubscribeLocal: (() => void) | null = null;
 
-  if (isSupabaseConfigured) {
+  if (isSupabaseConfigured && !isDemoMode()) {
     try {
       channel = supabase
         .channel(`public:${queryRef.table}`)
@@ -389,9 +415,10 @@ export const onSnapshot = (
       }, 10000);
     }
   } else {
-    interval = setInterval(() => {
+    // Local/Demo mode: subscribe to local changes
+    unsubscribeLocal = subscribeLocalDbChange(queryRef.table, () => {
       fetchAndNotify();
-    }, 10000);
+    });
   }
 
   return () => {
@@ -403,6 +430,10 @@ export const onSnapshot = (
 
     if (interval) {
       clearInterval(interval);
+    }
+
+    if (unsubscribeLocal) {
+      unsubscribeLocal();
     }
   };
 };

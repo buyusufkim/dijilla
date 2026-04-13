@@ -1,5 +1,25 @@
 const STORAGE_SCOPE_KEY = "droto_data_scope";
 
+// Local change event system
+type ChangeCallback = () => void;
+const listeners: Record<string, Set<ChangeCallback>> = {};
+
+export const subscribeLocalDbChange = (table: string, callback: ChangeCallback) => {
+  if (!listeners[table]) {
+    listeners[table] = new Set();
+  }
+  listeners[table].add(callback);
+  return () => {
+    listeners[table].delete(callback);
+  };
+};
+
+export const emitLocalDbChange = (table: string) => {
+  if (listeners[table]) {
+    listeners[table].forEach((cb) => cb());
+  }
+};
+
 const getScope = () => {
   if (typeof window === "undefined") return "guest";
   return localStorage.getItem(STORAGE_SCOPE_KEY) || "guest";
@@ -32,6 +52,7 @@ export const setLocalData = (table: string, data: any[]) => {
   try {
     if (typeof window === "undefined") return;
     localStorage.setItem(getScopedTableKey(table), JSON.stringify(data));
+    emitLocalDbChange(table);
   } catch (e) {
     console.error("localStorage write error:", e);
   }

@@ -12,8 +12,8 @@ import { performDemoLogin } from '@/lib/auth-logic';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithEmail: (email: string, password: string) => Promise<{ error: any }>;
-  signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signInWithEmail: (email: string, password: string) => Promise<{ error: any; requiresEmailVerification?: boolean }>;
+  signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error: any; requiresEmailVerification?: boolean }>;
   signOut: () => Promise<void>;
   demoLogin: () => Promise<void>;
 }
@@ -21,8 +21,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  signInWithEmail: async () => ({ error: null }),
-  signUpWithEmail: async () => ({ error: null }),
+  signInWithEmail: async () => ({ error: null, requiresEmailVerification: false }),
+  signUpWithEmail: async () => ({ error: null, requiresEmailVerification: false }),
   signOut: async () => {},
   demoLogin: async () => {},
 });
@@ -55,9 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUpWithEmail = async (email: string, password: string, fullName: string) => {
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password, fullName);
+      const requiresEmailVerification = !auth.currentUser;
       setLoading(false);
-      return { error: null };
+      return { error: null, requiresEmailVerification };
     } catch (error) {
       setLoading(false);
       return { error };
