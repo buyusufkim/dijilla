@@ -3,7 +3,7 @@ import { QuoteRequest, QuoteRequestInsert, NormalizedOffer, QuoteStatus } from "
 
 /**
  * Quote Repository
- * Handles database interactions for quote requests and offers.
+ * Handles database interactions for quote requests and offers using Supabase.
  */
 export class QuoteRepository {
   /**
@@ -11,18 +11,18 @@ export class QuoteRepository {
    * @param data The quote request data.
    */
   async createQuoteRequest(data: QuoteRequestInsert): Promise<QuoteRequest> {
-    const { data: quoteRequest, error } = await (supabaseAdmin
-      .from("quote_requests") as any)
-      .insert(data)
+    const { data: inserted, error } = await supabaseAdmin
+      .from("quote_requests")
+      .insert({
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
       .select()
       .single();
 
-    if (error) {
-      console.error("[QuoteRepository] Error creating quote request:", error);
-      throw new Error("Teklif talebi oluşturulamadı.");
-    }
-
-    return quoteRequest as QuoteRequest;
+    if (error) throw error;
+    return inserted as QuoteRequest;
   }
 
   /**
@@ -30,17 +30,16 @@ export class QuoteRepository {
    * @param id The quote request ID.
    */
   async getQuoteRequestById(id: string): Promise<QuoteRequest | null> {
-    const { data, error } = await (supabaseAdmin
-      .from("quote_requests") as any)
+    const { data, error } = await supabaseAdmin
+      .from("quote_requests")
       .select("*")
       .eq("id", id)
       .single();
-
+    
     if (error) {
-      console.error(`[QuoteRepository] Error fetching quote request ${id}:`, error);
-      return null;
+      if (error.code === 'PGRST116') return null;
+      throw error;
     }
-
     return data as QuoteRequest;
   }
 
@@ -49,17 +48,13 @@ export class QuoteRepository {
    * @param requestId The quote request ID.
    */
   async getOffersByRequestId(requestId: string): Promise<NormalizedOffer[]> {
-    const { data, error } = await (supabaseAdmin
-      .from("normalized_offers") as any)
+    const { data, error } = await supabaseAdmin
+      .from("normalized_offers")
       .select("*")
       .eq("quote_request_id", requestId);
-
-    if (error) {
-      console.error(`[QuoteRepository] Error fetching offers for request ${requestId}:`, error);
-      return [];
-    }
-
-    return data as NormalizedOffer[];
+    
+    if (error) throw error;
+    return (data || []) as NormalizedOffer[];
   }
 
   /**
@@ -68,13 +63,14 @@ export class QuoteRepository {
    * @param status The new status.
    */
   async updateStatus(id: string, status: QuoteStatus): Promise<void> {
-    const { error } = await (supabaseAdmin
-      .from("quote_requests") as any)
-      .update({ status })
+    const { error } = await supabaseAdmin
+      .from("quote_requests")
+      .update({
+        status,
+        updated_at: new Date().toISOString()
+      })
       .eq("id", id);
-
-    if (error) {
-      console.error(`[QuoteRepository] Error updating status for request ${id}:`, error);
-    }
+    
+    if (error) throw error;
   }
 }

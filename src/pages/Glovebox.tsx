@@ -12,10 +12,11 @@ import {
   Upload,
   Trash2,
   Eye,
-  Loader2
+  Loader2,
+  X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

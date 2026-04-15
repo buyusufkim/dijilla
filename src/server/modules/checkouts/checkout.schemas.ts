@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const createCheckoutSchema = z.object({
-  offerId: z.string().uuid({ message: "Geçersiz teklif ID" }),
-  userId: z.string().uuid({ message: "Geçersiz kullanıcı ID" })
+  offerId: z.string().min(1, { message: "Geçersiz teklif ID" }),
+  userId: z.string().min(1, { message: "Geçersiz kullanıcı ID" })
 });
 
 export const paymentSchema = z.object({

@@ -25,8 +25,18 @@ const generateDemoUserId = (email: string) => {
   }
   
   const hex = Math.abs(hash).toString(16).padStart(8, '0');
-  // Format: demo-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-  return `demo-${hex}-${hex.substring(0, 4)}-${hex.substring(4, 8)}-${hex}${hex}`;
+  const hex2 = Math.abs(hash * 31).toString(16).padStart(8, '0');
+  const hex3 = Math.abs(hash * 7).toString(16).padStart(8, '0');
+  const hex4 = Math.abs(hash * 13).toString(16).padStart(8, '0');
+
+  // Format as valid UUID: xxxxxxxx-xxxx-4xxx-axxx-xxxxxxxxxxxx
+  const part1 = hex;
+  const part2 = hex2.substring(0, 4);
+  const part3 = "4" + hex3.substring(0, 3); // Version 4
+  const part4 = "a" + hex4.substring(0, 3); // Variant a
+  const part5 = (hex + hex2 + hex3).substring(0, 12);
+  
+  return `${part1}-${part2}-${part3}-${part4}-${part5}`;
 };
 
 const notifyAuthListeners = (user: User | null) => {

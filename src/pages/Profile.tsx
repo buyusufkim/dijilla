@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function Profile() {
-  const { members, activeMember, addMember, removeMember } = useFamily();
+  const { members, activeMember, addMember, removeMember, loading: familyLoading } = useFamily();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -145,49 +145,57 @@ export default function Profile() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
-              {/* Current User */}
-              <div className="flex items-center justify-between p-4 bg-[#0A1128] rounded-2xl border border-[#00E5FF]/30">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00E5FF] to-[#00E676] flex items-center justify-center shadow-lg">
-                    <UserIcon className="w-6 h-6 text-[#0A1128]" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg">{displayName}</h3>
-                    <p className="text-sm text-[#00E5FF] font-medium">Kendim</p>
-                  </div>
+              {familyLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-8 h-8 border-2 border-[#00E5FF]/20 border-t-[#00E5FF] rounded-full animate-spin" />
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Current User */}
+                  <div className="flex items-center justify-between p-4 bg-[#0A1128] rounded-2xl border border-[#00E5FF]/30">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00E5FF] to-[#00E676] flex items-center justify-center shadow-lg">
+                        <UserIcon className="w-6 h-6 text-[#0A1128]" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg">{displayName}</h3>
+                        <p className="text-sm text-[#00E5FF] font-medium">Kendim</p>
+                      </div>
+                    </div>
+                  </div>
 
-              {members.filter(m => m.role !== 'self').map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-4 bg-[#0A1128] rounded-2xl border border-white/5"
-                >
-                  <div className="flex items-center gap-4">
+                  {members.filter(m => m.role !== 'self').map((member) => (
                     <div
-                      className={`w-12 h-12 rounded-full bg-gradient-to-br ${member.avatarColor} flex items-center justify-center shadow-lg`}
+                      key={member.id}
+                      className="flex items-center justify-between p-4 bg-[#0A1128] rounded-2xl border border-white/5"
                     >
-                      <UserIcon className="w-6 h-6 text-white" />
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`w-12 h-12 rounded-full bg-gradient-to-br ${member.avatarColor} flex items-center justify-center shadow-lg`}
+                        >
+                          <UserIcon className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{member.name}</h3>
+                          <p className="text-sm text-white/50 capitalize">
+                            {member.role === "spouse"
+                              ? "Eşim"
+                              : member.role === "child"
+                                ? "Çocuğum"
+                                : "Ebeveynim"}
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => setMemberToDelete(member.id)}
+                        className="p-2 text-white/40 hover:text-[#FF3D00] transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{member.name}</h3>
-                      <p className="text-sm text-white/50 capitalize">
-                        {member.role === "spouse"
-                          ? "Eşim"
-                          : member.role === "child"
-                            ? "Çocuğum"
-                            : "Ebeveynim"}
-                      </p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setMemberToDelete(member.id)}
-                    className="p-2 text-white/40 hover:text-[#FF3D00] transition-colors"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              ))}
+                  ))}
+                </>
+              )}
             </CardContent>
           </Card>
 

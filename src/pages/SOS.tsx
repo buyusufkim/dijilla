@@ -131,24 +131,24 @@ export default function SOS() {
                     <Phone className="w-10 h-10 text-red-500" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">112 Aranıyor...</h3>
+                    <h3 className="text-xl font-bold mb-2">112 Acil Servis</h3>
                     <p className="text-white/60 text-sm">
-                      Konum bilgileriniz yetkililere iletiliyor. Lütfen hattan ayrılmayın.
+                      Konum bilgileriniz otomatik olarak yetkililere iletilecektir. Lütfen sakin olun ve hattan ayrılmayın.
                     </p>
                   </div>
-                  <div className="flex gap-3">
-                    <Button 
-                      variant="outline" 
-                      className="w-full border-white/20 hover:bg-white/10"
-                      onClick={() => setIsCalling(false)}
-                    >
-                      İptal Et
-                    </Button>
+                  <div className="flex flex-col gap-3">
                     <a href="tel:112" className="w-full">
-                      <Button className="w-full bg-red-500 hover:bg-red-600 text-white font-bold">
-                        Aramayı Başlat
+                      <Button className="w-full py-6 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-2xl shadow-lg shadow-red-500/20">
+                        Hemen Ara: 112
                       </Button>
                     </a>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full py-4 text-white/40 hover:text-white hover:bg-white/5"
+                      onClick={() => setIsCalling(false)}
+                    >
+                      Yanlışlıkla Bastım, İptal Et
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

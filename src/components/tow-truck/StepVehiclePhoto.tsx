@@ -33,6 +33,12 @@ export const StepVehiclePhoto: React.FC<StepVehiclePhotoProps> = ({
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Araç Fotoğrafı</h2>
         <p className="text-white/60 text-sm">Aracın bulunduğu konumu ve durumunu gösteren bir fotoğraf çekin.</p>
+        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-3">
+          <Camera className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-200/70 leading-relaxed">
+            <span className="font-bold text-blue-300">Bilgi:</span> Fotoğrafınız dijital talep kaydınıza (DB) güvenli bir şekilde eklenir. WhatsApp üzerinden teknik kısıtlamalar nedeniyle yalnızca metin mesajı iletilir, ancak ekiplerimiz sistem üzerinden fotoğrafa erişebilir.
+          </p>
+        </div>
       </div>
 
       <Card className="bg-[#1A233A] border-white/10 overflow-hidden">

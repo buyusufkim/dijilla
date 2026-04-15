@@ -4,6 +4,7 @@ import { AnimatePresence } from "motion/react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase";
 import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from "@/firebase";
+import { uploadFile, base64ToBlob } from "@/lib/storage";
 
 import { TowTruckHeader } from "@/components/tow-truck/TowTruckHeader";
 import { ProgressBar } from "@/components/tow-truck/ProgressBar";
@@ -26,6 +27,41 @@ export default function TowTruck() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const whatsappNumber = import.meta.env.VITE_TOW_TRUCK_WHATSAPP;
+
+  const compressImage = (base64Str: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+    });
+  };
 
   useEffect(() => {
     if (user) {
@@ -74,8 +110,31 @@ export default function TowTruck() {
   const handleSubmitRequest = async () => {
     if (!user || !plate || !phone || !address || !destination) return;
 
+    if (!whatsappNumber) {
+      setError("Çekici hizmeti şu anda yapılandırılmamış. Lütfen daha sonra tekrar deneyin.");
+      return;
+    }
+
     setIsSubmitting(true);
+    setError(null);
     try {
+      let photoUrl = null;
+      let photoPath = null;
+
+      if (vehiclePhoto && vehiclePhoto.startsWith('data:image')) {
+        // 1. Compress
+        const compressedBase64 = await compressImage(vehiclePhoto);
+        // 2. Convert to Blob
+        const blob = base64ToBlob(compressedBase64);
+        // 3. Upload to Storage
+        const fileName = `tow_${user.uid}_${Date.now()}.jpg`;
+        const storagePath = `service_requests/tow/${user.uid}/${fileName}`;
+        const uploadResult = await uploadFile(blob, storagePath);
+        
+        photoUrl = uploadResult.url;
+        photoPath = uploadResult.path;
+      }
+
       await addDoc(collection(db, "service_requests"), {
         user_id: user.uid,
         type: "tow",
@@ -84,22 +143,35 @@ export default function TowTruck() {
         location_address: address,
         destination: destination === "service" ? "Yetkili Servis" : "Özel Konum",
         status: "pending",
+        photo_url: photoUrl, // Keep for backward compatibility/UI
+        photo_path: photoPath,
+        photo_uploaded_at: photoUrl ? new Date().toISOString() : null,
         created_at: serverTimestamp(),
       });
 
       // After saving to DB, open WhatsApp
       handleWhatsAppSend();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting request:', error);
+      setError(error.message || "Talebiniz kaydedilirken bir hata oluştu.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleWhatsAppSend = () => {
-    const message = `🚀 *Çekici Talebi*\n\n🚗 *Araç:* ${plate}\n📱 *Telefon:* ${phone}\n📍 *Konum:* ${address || "Otomatik Konum"}\n🏁 *Hedef:* ${destination === "service" ? "Yetkili Servis" : "Özel Konum"}\n📸 *Fotoğraf:* ${vehiclePhoto ? "Eklendi" : "Eklenmedi"}`;
+    if (!whatsappNumber) return;
+    
+    const message = `🚀 *ÇEKİCİ TALEBİ* 🚀\n\n` +
+      `🚗 *Araç Plakası:* ${plate}\n` +
+      `📱 *İletişim:* ${phone}\n` +
+      `📍 *Konum:* ${address || "Otomatik Konum"}\n` +
+      `🏁 *Hedef:* ${destination === "service" ? "Yetkili Servis" : "Özel Konum"}\n` +
+      `📸 *Fotoğraf:* ${vehiclePhoto ? "Sistem Kaydına Eklendi ✅" : "Eklenmedi"}\n\n` +
+      `_Not: Fotoğraf güvenliğiniz için Droto sistemine kaydedilmiştir. WhatsApp üzerinden yalnızca metin iletilmektedir._`;
+      
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/905000000000?text=${encodedMessage}`, "_blank");
+    window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
   };
 
   const simulateLocation = () => {
@@ -210,17 +282,25 @@ export default function TowTruck() {
           )}
 
           {step === 4 && (
-            <StepConfirmation 
-              phone={phone}
-              setPhone={setPhone}
-              plate={plate}
-              address={address}
-              destination={destination}
-              vehiclePhoto={vehiclePhoto}
-              isSubmitting={isSubmitting}
-              onSubmit={handleSubmitRequest}
-              onBack={handleBack}
-            />
+            <div className="space-y-4">
+              {error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  {error}
+                </div>
+              )}
+              <StepConfirmation 
+                phone={phone}
+                setPhone={setPhone}
+                plate={plate}
+                address={address}
+                destination={destination}
+                vehiclePhoto={vehiclePhoto}
+                isSubmitting={isSubmitting}
+                onSubmit={handleSubmitRequest}
+                onBack={handleBack}
+              />
+            </div>
           )}
         </AnimatePresence>
       </div>

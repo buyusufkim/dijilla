@@ -1,16 +1,11 @@
-import { Database } from "../../types.js";
+import { Database, QuoteStatus } from "../../types.js";
 
 export type QuoteRequest = Database["public"]["Tables"]["quote_requests"]["Row"];
 export type QuoteRequestInsert = Database["public"]["Tables"]["quote_requests"]["Insert"];
 
 export type NormalizedOffer = Database["public"]["Tables"]["normalized_offers"]["Row"];
 
-export enum QuoteStatus {
-  PENDING = "pending",
-  PROCESSING = "processing",
-  COMPLETED = "completed",
-  FAILED = "failed"
-}
+export { QuoteStatus };
 
 export interface QuoteRequestDTO {
   vehicleId: string;

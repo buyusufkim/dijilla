@@ -7,6 +7,8 @@ import {
   MapPin,
   ChevronRight,
   Camera,
+  AlertCircle,
+  Info,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +49,18 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
         </div>
       );
     }
+
+    const DemoBanner = () => (
+      <div className="mb-6 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <div className="text-left">
+          <p className="text-xs font-bold text-amber-500 uppercase tracking-wider">Demo Modu</p>
+          <p className="text-[10px] text-amber-500/70 leading-relaxed">
+            Şu an simülasyon modundasınız. Gösterilen rakamlar ve tarihler sistemin işleyişini göstermek amaçlı örnek verilerdir.
+          </p>
+        </div>
+      </div>
+    );
 
     switch (selectedService?.label) {
       case "Nöbetçi Eczane":
@@ -94,29 +108,44 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
       case "Trafik Cezası":
         return (
           <div className="space-y-6">
+            <DemoBanner />
             <div className="space-y-4">
               <div className="p-4 bg-[#0A1128] rounded-xl border border-white/5 text-left">
-                <p className="text-xs text-white/40 uppercase font-bold tracking-widest mb-2">Araç Plakası</p>
+                <p className="text-xs text-white/40 uppercase font-bold tracking-widest mb-2">Araç Plakası (Gerçek)</p>
                 <p className="text-lg font-bold">{vehicle?.plate || "Araç Seçilmedi"}</p>
               </div>
-              <div className="p-4 bg-[#0A1128] rounded-xl border border-white/5 text-left flex justify-between items-center">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-xs text-white/40 uppercase font-bold tracking-widest">Toplam Borç</p>
-                    <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1 rounded font-bold uppercase">Demo</span>
-                  </div>
-                  <p className="text-2xl font-bold text-[#00E5FF]">₺1.450,00</p>
+              
+              <div className="p-4 bg-white/5 border border-dashed border-white/10 rounded-xl text-left">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs text-white/20 uppercase font-bold tracking-widest">Resmi Borç Sorgulama</p>
+                  <span className="text-[10px] text-white/40 italic">Veri bekleniyor...</span>
                 </div>
-                <div className="text-xs bg-[#00E5FF]/10 text-[#00E5FF] px-2 py-1 rounded">Vadesi Geçmiş</div>
+                
+                <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-[10px] text-amber-500 uppercase font-black tracking-tighter">Simülasyon Verisi</p>
+                    <Info className="w-3 h-3 text-amber-500/50" />
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-2xl font-black text-white/90">₺1.450,00</p>
+                      <p className="text-[10px] text-white/40 mt-1">Örnek MTV + Gecikme Zammı</p>
+                    </div>
+                    <div className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-1 rounded font-bold">Vadesi Geçmiş</div>
+                  </div>
+                </div>
               </div>
             </div>
             <Button 
               onClick={onAction}
               disabled={isProcessing || !vehicle}
-              className="w-full py-6 bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] font-bold rounded-xl"
+              className="w-full py-6 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/10"
             >
-              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Şimdi Öde"}
+              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Simülasyonu Başlat"}
             </Button>
+            <p className="text-[10px] text-white/20 text-center italic">
+              * Gerçek ödeme işlemi için e-Devlet entegrasyonu gereklidir.
+            </p>
           </div>
         );
 
@@ -128,23 +157,30 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
         });
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-xs text-white/40 uppercase font-bold tracking-widest">Müsait Tarihler</p>
-              <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1 rounded font-bold uppercase">Demo</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {nextDates.map(date => (
-                <button key={date} className="p-3 bg-[#0A1128] border border-white/10 rounded-xl text-sm hover:border-[#00E5FF] transition-all">
-                  {date}
-                </button>
-              ))}
+            <DemoBanner />
+            <div className="space-y-4">
+              <div className="p-4 bg-[#0A1128] rounded-xl border border-white/5 text-left">
+                <p className="text-xs text-white/40 uppercase font-bold tracking-widest mb-2">Araç Plakası</p>
+                <p className="text-lg font-bold">{vehicle?.plate || "Araç Seçilmedi"}</p>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs text-white/40 uppercase font-bold tracking-widest px-1">Örnek Randevu Slotları</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {nextDates.map(date => (
+                    <button key={date} className="p-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white/60 hover:border-amber-500/50 transition-all text-center">
+                      {date}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <Button 
               onClick={onAction}
               disabled={isProcessing}
-              className="w-full py-6 bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] font-bold rounded-xl"
+              className="w-full py-6 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/10"
             >
-              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Randevu Al"}
+              {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Örnek Randevu Al"}
             </Button>
           </div>
         );

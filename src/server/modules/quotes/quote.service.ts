@@ -6,7 +6,7 @@ import { supabaseAdmin } from "../../lib/supabase.js";
 
 /**
  * Quote Service
- * Handles business logic for quote requests and offers.
+ * Handles business logic for quote requests and offers using Supabase.
  */
 export class QuoteService {
   private repository = new QuoteRepository();
@@ -17,20 +17,21 @@ export class QuoteService {
    * @param input The quote request input.
    */
   async requestQuotes(input: QuoteRequestDTO): Promise<string> {
-    // 0. Verify vehicle ownership
+    // 0. Verify vehicle ownership in Supabase
     if (input.userId) {
-      const { data: vehicle, error: vehicleError } = await (supabaseAdmin as any)
+      const { data: vehicle, error } = await supabaseAdmin
         .from("vehicles")
         .select("user_id")
         .eq("id", input.vehicleId)
         .single();
 
-      if (vehicleError || !vehicle || vehicle.user_id !== input.userId) {
+      if (error || !vehicle || vehicle.user_id !== input.userId) {
+        console.error(`[QuoteService] Vehicle verification failed. Error: ${error?.message}, Owner: ${vehicle?.user_id}, Requester: ${input.userId}`);
         throw new Error("Bu araç için teklif alma yetkiniz yok.");
       }
     }
 
-    // 1. Create quote request record
+    // 1. Create quote request record in Supabase
     const quoteRequest = await this.repository.createQuoteRequest({
       vehicle_id: input.vehicleId,
       user_id: input.userId || null,
@@ -39,8 +40,6 @@ export class QuoteService {
     });
 
     // 2. Trigger orchestration (async)
-    // In a real production app, this might be handled by a message queue.
-    // For this implementation, we run it in the background.
     this.orchestrator.orchestrate(quoteRequest, { id: input.vehicleId }).catch((error) => {
       console.error(`[QuoteService] Orchestration failed for Request: ${quoteRequest.id}`, error);
     });

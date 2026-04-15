@@ -6,7 +6,7 @@ import { FakeCascoProviderAdapter } from "../providers/adapters/FakeCascoProvide
 
 /**
  * Quote Orchestrator
- * Coordinates multiple provider adapters to fetch and store insurance offers.
+ * Coordinates multiple provider adapters to fetch and store insurance offers using Supabase.
  */
 export class QuoteOrchestrator {
   private adapters: BaseProviderAdapter[];
@@ -43,80 +43,79 @@ export class QuoteOrchestrator {
       const errorMsg = `[QuoteOrchestrator] No adapters found for type: ${quoteRequest.type}`;
       console.error(errorMsg);
       
-      // Update status to failed immediately if no adapters found
-      await (supabaseAdmin
-        .from("quote_requests") as any)
-        .update({ status: QuoteStatus.FAILED })
-        .eq("id", quoteRequest.id);
-        
+      await supabaseAdmin.from("quote_requests").update({ status: QuoteStatus.FAILED }).eq("id", quoteRequest.id);
       return;
     }
 
     // Update status to processing
-    await (supabaseAdmin
-      .from("quote_requests") as any)
-      .update({ status: QuoteStatus.PROCESSING })
-      .eq("id", quoteRequest.id);
+    await supabaseAdmin.from("quote_requests").update({ status: QuoteStatus.PROCESSING }).eq("id", quoteRequest.id);
 
-    const results = await Promise.allSettled(
-      filteredAdapters.map(async (adapter) => {
-        try {
-          // Log provider request start
-          const { data: providerReq } = await (supabaseAdmin
-            .from("provider_requests") as any)
-            .insert({
-              quote_request_id: quoteRequest.id,
-              provider_id: adapter.providerId,
-              status: "pending"
-            })
-            .select()
-            .single();
+    let successCount = 0;
+    let totalAdapters = filteredAdapters.length;
 
-          const offers = await adapter.getQuotes(quoteRequest, vehicle);
+    for (const adapter of filteredAdapters) {
+      try {
+        // Log provider request start
+        const { data: providerReq, error: reqError } = await supabaseAdmin
+          .from("provider_requests")
+          .insert({
+            quote_request_id: quoteRequest.id,
+            provider_id: adapter.providerId,
+            status: "pending",
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
-          // Save offers
-          if (offers.length > 0) {
-            await (supabaseAdmin
-              .from("normalized_offers") as any)
-              .insert(offers as any[]);
-          }
+        if (reqError) throw reqError;
 
-          // Update provider request to success
-          if (providerReq) {
-            await (supabaseAdmin
-              .from("provider_requests") as any)
-              .update({ status: "completed" })
-              .eq("id", (providerReq as any).id);
-          }
+        const offers = await adapter.getQuotes(quoteRequest, vehicle);
 
-          return offers;
-        } catch (error: any) {
-          console.error(`[QuoteOrchestrator] Provider ${adapter.providerId} failed:`, error.message);
+        // Save offers
+        if (offers.length > 0) {
+          const { error: offersError } = await supabaseAdmin
+            .from("normalized_offers")
+            .insert(offers.map(offer => ({
+              ...offer,
+              created_at: new Date().toISOString()
+            })));
           
-          // Log provider request failure
-          await (supabaseAdmin
-            .from("provider_requests") as any)
-            .insert({
-              quote_request_id: quoteRequest.id,
-              provider_id: adapter.providerId,
-              status: "failed",
-              error_message: error.message
-            });
-
-          throw error;
+          if (offersError) throw offersError;
+          successCount++;
         }
-      })
-    );
+
+        // Update provider request to success
+        await supabaseAdmin
+          .from("provider_requests")
+          .update({ status: "completed" })
+          .eq("id", providerReq.id);
+
+      } catch (error: any) {
+        console.error(`[QuoteOrchestrator] Provider ${adapter.providerId} failed:`, error.message);
+        
+        // Log provider request failure
+        await supabaseAdmin.from("provider_requests").insert({
+          quote_request_id: quoteRequest.id,
+          provider_id: adapter.providerId,
+          status: "failed",
+          error_message: error.message,
+          created_at: new Date().toISOString()
+        });
+      }
+    }
 
     // Finalize quote request status
-    const allFailed = results.every((r) => r.status === "rejected");
-    const finalStatus = allFailed ? QuoteStatus.FAILED : QuoteStatus.COMPLETED;
+    let finalStatus: QuoteStatus;
+    if (successCount === 0) {
+      finalStatus = QuoteStatus.FAILED;
+    } else if (successCount === totalAdapters) {
+      finalStatus = QuoteStatus.COMPLETED;
+    } else {
+      finalStatus = QuoteStatus.PARTIAL;
+    }
 
-    await (supabaseAdmin
-      .from("quote_requests") as any)
-      .update({ status: finalStatus })
-      .eq("id", quoteRequest.id);
+    await supabaseAdmin.from("quote_requests").update({ status: finalStatus }).eq("id", quoteRequest.id);
 
-    console.log(`[QuoteOrchestrator] Orchestration finished with status: ${finalStatus}`);
+    console.log(`[QuoteOrchestrator] Orchestration finished with status: ${finalStatus} (Success: ${successCount}/${totalAdapters})`);
   }
 }

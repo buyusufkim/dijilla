@@ -27,14 +27,27 @@ type Step = 'FORM' | 'OFFER' | 'COMPARISON' | 'QUICK_BUY' | 'CONFIRMATION';
 
 interface Offer {
   id: string;
-  provider_name: string;
-  package_name: string;
-  price: number;
-  coverage_details: any;
-  highlight?: boolean;
-  trust?: string;
-  isDemo?: boolean;
+  providerName: string;
+  premium: number;
+  currency: string;
+  coverageDetails: Record<string, any>;
+  score: number;
+  badges: string[];
+  isDemo: boolean;
+  packageName: string;
 }
+
+const mapOfferFromApi = (raw: any): Offer => ({
+  id: raw.id || '',
+  providerName: raw.providerName || raw.provider_name || 'Bilinmeyen Sağlayıcı',
+  premium: Number(raw.premium || raw.price || 0),
+  currency: raw.currency || 'TRY',
+  coverageDetails: raw.coverageDetails || raw.coverage_details || {},
+  score: Number(raw.score || raw.trust || 0),
+  badges: Array.isArray(raw.badges) ? raw.badges : (raw.highlight === 'recommended' ? ['recommended'] : []),
+  isDemo: !!raw.isDemo,
+  packageName: raw.packageName || raw.package_name || 'Kapsamlı Kasko Paketi'
+});
 
 export default function InsurancePurchase() {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +61,7 @@ export default function InsurancePurchase() {
   
   const [requestId, setRequestId] = useState<string | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [status, setStatus] = useState<string>('pending');
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
 
@@ -78,7 +92,7 @@ export default function InsurancePurchase() {
         headers,
         body: JSON.stringify({
           vehicleId: id,
-          insuranceType: 'kasko'
+          type: 'casco'
         })
       });
       
@@ -96,7 +110,7 @@ export default function InsurancePurchase() {
 
   const startPolling = async (reqId: string) => {
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 15; // Increased attempts for better coverage
     
     const poll = async () => {
       try {
@@ -104,8 +118,25 @@ export default function InsurancePurchase() {
         const response = await fetch(`/api/quotes/${reqId}/offers`, { headers });
         const result = await response.json();
         
-        if (result.success && result.data.offers.length > 0) {
-          setOffers(result.data.offers);
+        if (!result.success) throw new Error(result.error?.message || 'Teklifler alınırken hata oluştu.');
+
+        const { status: apiStatus, offers: apiOffers } = result.data;
+        const normalizedOffers = apiOffers.map(mapOfferFromApi);
+        
+        setStatus(apiStatus);
+
+        // Update offers if we have any
+        if (normalizedOffers.length > 0) {
+          setOffers(normalizedOffers);
+        }
+
+        // Check if we should stop polling
+        const isFinalStatus = ['completed', 'partial', 'failed'].includes(apiStatus);
+        
+        if (isFinalStatus) {
+          if (normalizedOffers.length === 0 && apiStatus === 'failed') {
+            setError("Maalesef şu an uygun teklif bulunamadı.");
+          }
           setLoading(false);
           return;
         }
@@ -114,7 +145,10 @@ export default function InsurancePurchase() {
         if (attempts < maxAttempts) {
           setTimeout(poll, 2000);
         } else {
-          setError("Teklifler alınamadı. Lütfen tekrar deneyin.");
+          // Timeout reached, but we might have partial results
+          if (normalizedOffers.length === 0) {
+            setError("Teklif alma işlemi zaman aşımına uğradı. Lütfen tekrar deneyin.");
+          }
           setLoading(false);
         }
       } catch (err: any) {
@@ -129,21 +163,21 @@ export default function InsurancePurchase() {
   const createCheckout = async () => {
     if (!selectedOffer) return;
     setLoading(true);
+    setError(null);
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/checkouts/create', {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          offerId: selectedOffer.id,
-          vehicleId: id
+          offerId: selectedOffer.id
         })
       });
       
       const result = await response.json();
       if (!result.success) throw new Error(result.error?.message || 'Ödeme başlatılamadı.');
       
-      setCheckoutId(result.data.checkoutId);
+      setCheckoutId(result.data.id);
       setStep('QUICK_BUY');
     } catch (err: any) {
       setError(err.message);
@@ -155,11 +189,19 @@ export default function InsurancePurchase() {
   const processPayment = async () => {
     if (!checkoutId) return;
     setLoading(true);
+    setError(null);
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(`/api/checkouts/${checkoutId}/pay`, {
         method: 'POST',
-        headers
+        headers,
+        body: JSON.stringify({
+          cardNumber: "4242424242424242",
+          expiryMonth: "12",
+          expiryYear: "26",
+          cvv: "123",
+          holderName: user?.displayName || "Test User"
+        })
       });
       
       const result = await response.json();
@@ -270,6 +312,15 @@ export default function InsurancePurchase() {
               </div>
             </div>
 
+            {status === 'partial' && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-2xl flex items-center gap-3">
+                <ShieldAlert className="w-5 h-5 text-yellow-500 shrink-0" />
+                <p className="text-xs text-yellow-200/70">
+                  Bazı sigorta sağlayıcılarından yanıt alınamadı. Mevcut en iyi teklifleri aşağıda görebilirsiniz.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-4">
               {offers.map((offer) => (
                 <Card 
@@ -282,8 +333,8 @@ export default function InsurancePurchase() {
                   <CardContent className="p-6 flex justify-between items-center">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-lg">{offer.provider_name}</p>
-                        {offer.highlight && (
+                        <p className="font-bold text-lg">{offer.providerName || 'Bilinmeyen Sağlayıcı'}</p>
+                        {offer.badges.includes('recommended') && (
                           <span className="bg-[#00E5FF] text-black text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
                             Önerilen
                           </span>
@@ -294,15 +345,17 @@ export default function InsurancePurchase() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-white/40">{offer.package_name}</p>
+                      <p className="text-xs text-white/40">{offer.packageName}</p>
                       <div className="flex items-center gap-1 text-[10px] text-[#00E676] font-bold">
                         <Star className="w-3 h-3 fill-current" />
-                        {offer.trust || 'Güvenilir Sağlayıcı'}
+                        {offer.score > 0 ? `${offer.score}/100 Güven Puanı` : 'Güvenilir Sağlayıcı'}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-black">₺{offer.price.toLocaleString('tr-TR')}</p>
-                      <p className="text-[10px] text-white/20 font-bold uppercase">Yıllık</p>
+                      <p className="text-2xl font-black">
+                        {offer.premium > 0 ? `₺${offer.premium.toLocaleString('tr-TR')}` : '---'}
+                      </p>
+                      <p className="text-[10px] text-white/20 font-bold uppercase">{offer.currency || 'TRY'} / Yıllık</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -345,18 +398,18 @@ export default function InsurancePurchase() {
                 <thead>
                   <tr className="border-b border-white/5">
                     <th className="p-4 text-left text-white/40 font-bold uppercase text-[10px]">Özellik</th>
-                    <th className="p-4 text-right text-white/40 font-bold uppercase text-[10px]">{selectedOffer?.provider_name}</th>
+                    <th className="p-4 text-right text-white/40 font-bold uppercase text-[10px]">{selectedOffer?.providerName}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {selectedOffer && Object.entries(selectedOffer.coverage_details).map(([key, value]: [string, any], idx) => (
+                  {selectedOffer && Object.entries(selectedOffer.coverageDetails).map(([key, value]: [string, any], idx) => (
                     <tr key={idx}>
                       <td className="p-4 text-white/60 capitalize">{key.replace(/_/g, ' ')}</td>
                       <td className="p-4 text-right">
                         {typeof value === 'boolean' ? (
                           value ? <CheckCircle2 className="w-5 h-5 text-[#00E676] ml-auto" /> : <div className="w-5 h-5 border border-white/10 rounded-full ml-auto" />
                         ) : (
-                          <span className="font-bold text-[#00E5FF]">{value}</span>
+                          <span className="font-bold text-[#00E5FF]">{value || '---'}</span>
                         )}
                       </td>
                     </tr>
@@ -384,39 +437,83 @@ export default function InsurancePurchase() {
             className="space-y-6"
           >
             <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 px-3 py-1 rounded-full mb-2">
+                <AlertCircle className="w-3 h-3 text-yellow-500" />
+                <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest">Demo Ödeme Modu</span>
+              </div>
               <h2 className="text-3xl font-black tracking-tighter">Güvenli Ödeme</h2>
-              <p className="text-white/40">Poliçenizi anında aktif edin.</p>
+              <p className="text-white/40 text-sm">Bu bir simülasyondur, gerçek tahsilat yapılmaz.</p>
             </div>
 
             <Card className="bg-[#0A0A0A] border-white/5 rounded-3xl p-6 space-y-6">
               <div className="flex justify-between items-center border-b border-white/5 pb-4">
                 <div>
                   <p className="text-xs text-white/40 uppercase font-bold">Seçilen Paket</p>
-                  <p className="font-bold">{selectedOffer?.provider_name} - {selectedOffer?.package_name}</p>
+                  <p className="font-bold">{selectedOffer?.providerName} - {selectedOffer?.packageName}</p>
                 </div>
-                <p className="text-xl font-black">₺{selectedOffer?.price.toLocaleString('tr-TR')}</p>
+                <p className="text-xl font-black">
+                  {selectedOffer && selectedOffer.premium > 0 ? `₺${selectedOffer.premium.toLocaleString('tr-TR')}` : '---'}
+                </p>
               </div>
 
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Kart Bilgileri</label>
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center gap-3">
-                    <CreditCard className="w-5 h-5 text-white/40" />
-                    <span className="text-sm font-mono">**** **** **** 4242</span>
-                    <span className="ml-auto text-[10px] font-bold text-[#00E676]">AKTİF</span>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Kart Sahibi</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ad Soyad"
+                      defaultValue={user?.displayName || ""}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:border-[#00E5FF] outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Kart Numarası</label>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        placeholder="0000 0000 0000 0000"
+                        defaultValue="4242 4242 4242 4242"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:border-[#00E5FF] outline-none transition-colors font-mono"
+                      />
+                      <CreditCard className="w-5 h-5 text-white/20 absolute right-4 top-1/2 -translate-y-1/2" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">SKT</label>
+                      <input 
+                        type="text" 
+                        placeholder="AA/YY"
+                        defaultValue="12/26"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:border-[#00E5FF] outline-none transition-colors font-mono"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">CVV</label>
+                      <input 
+                        type="text" 
+                        placeholder="000"
+                        defaultValue="123"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:border-[#00E5FF] outline-none transition-colors font-mono"
+                      />
+                    </div>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2 text-[10px] text-white/40">
+                <div className="flex items-center gap-2 text-[10px] text-white/40 bg-white/5 p-3 rounded-xl border border-white/5">
                   <Lock className="w-3 h-3" />
-                  <span>İyzico altyapısı ile 256-bit SSL korumalı ödeme</span>
+                  <span>Test ortamındasınız. Herhangi bir kart bilgisi ile ilerleyebilirsiniz.</span>
                 </div>
               </div>
             </Card>
 
             <Button onClick={processPayment} disabled={loading} className="w-full h-16 bg-[#00E676] text-black hover:bg-[#00E676]/90 rounded-2xl text-lg font-bold shadow-2xl shadow-[#00E676]/20">
-              {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'Şimdi Öde ve Koru'}
+              {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'Demo Ödemeyi Tamamla'}
             </Button>
+            <p className="text-[10px] text-white/20 text-center">
+              * "Demo Ödemeyi Tamamla" butonuna basarak ödeme simülasyonunu onaylamış olursunuz.
+            </p>
           </motion.div>
         );
 
@@ -431,18 +528,21 @@ export default function InsurancePurchase() {
               <Check className="w-12 h-12 text-black stroke-[3px]" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-4xl font-black tracking-tighter">İşlem Başarılı!</h2>
-              <p className="text-white/60">Aracınız artık Droto güvencesi altında.</p>
+              <h2 className="text-4xl font-black tracking-tighter">Demo İşlem Başarılı!</h2>
+              <p className="text-white/60">Ödeme simülasyonu tamamlandı.</p>
             </div>
             
             <Card className="bg-[#0A0A0A] border-white/5 p-6 rounded-3xl text-left space-y-4">
               <div className="flex items-center gap-3">
-                <Zap className="w-5 h-5 text-[#FFD600]" />
-                <p className="font-bold text-sm">Sıradaki Öneri</p>
+                <AlertCircle className="w-5 h-5 text-yellow-500" />
+                <p className="font-bold text-sm">Önemli Bilgilendirme</p>
               </div>
-              <p className="text-sm text-white/60">Poliçeniz oluşturuldu. Dijital Torpido üzerinden belgenize dilediğiniz zaman ulaşabilirsiniz.</p>
+              <p className="text-sm text-white/60">
+                Bu bir demo uygulamadır. Gerçek bir poliçe oluşturulmamış ve herhangi bir ödeme alınmamıştır. 
+                Sistem akışını test etmek için simülasyon başarıyla sonuçlanmıştır.
+              </p>
               <Button onClick={() => navigate('/glovebox')} variant="outline" className="w-full border-white/10 rounded-xl font-bold">
-                Belgeyi Görüntüle
+                Dijital Torpido'ya Git
               </Button>
             </Card>
 

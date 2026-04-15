@@ -19,7 +19,7 @@ import { Logo } from "./Logo";
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { members, activeMember, setActiveMember } = useFamily();
+  const { members, activeMember, setActiveMember, loading } = useFamily();
   const [showFamilyDropdown, setShowFamilyDropdown] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -31,7 +31,7 @@ export default function Layout() {
     { icon: User, label: "Ailem & Profil", path: "/profile" },
   ];
 
-  const currentMemberName = activeMember?.name || "Sürücü";
+  const currentMemberName = loading ? "Yükleniyor..." : (activeMember?.name || "Sürücü");
   const currentMemberRole = activeMember?.role || "self";
   const currentMemberAvatarColor =
     activeMember?.avatarColor || "from-[#00E5FF] to-blue-600";
@@ -85,11 +85,12 @@ export default function Layout() {
 
             <button
               onClick={() => {
-                if (members.length > 0) {
+                if (!loading && members.length > 0) {
                   setShowFamilyDropdown(!showFamilyDropdown);
                 }
               }}
-              className="w-full flex items-center justify-between p-3 bg-[#0A1128] rounded-xl border border-white/10 hover:border-white/20 transition-all"
+              disabled={loading}
+              className="w-full flex items-center justify-between p-3 bg-[#0A1128] rounded-xl border border-white/10 hover:border-white/20 transition-all disabled:opacity-50"
             >
               <div className="flex items-center gap-3">
                 <div

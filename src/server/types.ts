@@ -404,6 +404,7 @@ export enum QuoteType {
 export enum QuoteStatus {
   PENDING = "pending",
   PROCESSING = "processing",
+  PARTIAL = "partial",
   COMPLETED = "completed",
   FAILED = "failed"
 }

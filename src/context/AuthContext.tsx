@@ -4,7 +4,6 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut as supabaseSignOut,
   auth
 } from "@/firebase";
 import { performDemoLogin } from '@/lib/auth-logic';
@@ -55,18 +54,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUpWithEmail = async (email: string, password: string, fullName: string) => {
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password, fullName);
-      const requiresEmailVerification = !auth.currentUser;
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      if (user) {
+        const { updateProfile } = await import('@/firebase');
+        await updateProfile(user, { displayName: fullName });
+        
+        const { db, doc, setDoc } = await import('@/firebase');
+        await setDoc(doc(db, 'profiles', user.uid), {
+          id: user.uid,
+          full_name: fullName,
+          email: email,
+          points: 0,
+          created_at: new Date().toISOString()
+        });
+      }
       setLoading(false);
-      return { error: null, requiresEmailVerification };
+      return { error: null };
     } catch (error) {
       setLoading(false);
       return { error };
     }
   };
 
-  const signOut = async () => {
-    await supabaseSignOut(auth);
+  const signOutUser = async () => {
+    const { signOut } = await import('@/firebase');
+    await signOut(auth);
   };
 
   const demoLogin = async () => {
@@ -76,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithEmail, signUpWithEmail, signOut, demoLogin }}>
+    <AuthContext.Provider value={{ user, loading, signInWithEmail, signUpWithEmail, signOut: signOutUser, demoLogin }}>
       {children}
     </AuthContext.Provider>
   );

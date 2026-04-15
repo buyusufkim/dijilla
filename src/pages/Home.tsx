@@ -14,7 +14,7 @@ import { QuickActions } from "@/components/home/QuickActions";
 import { AIAssistantTeaser } from "@/components/home/AIAssistantTeaser";
 
 export default function Home() {
-  const { activeMember } = useFamily();
+  const { activeMember, loading: familyLoading } = useFamily();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -93,12 +93,13 @@ export default function Home() {
   const criticalNotification = notifications.find(n => n.type === "warning" && !n.read);
   const upcomingMaintenance = maintenanceAppointments[0];
   
-  const displayName =
-  profile?.full_name?.split(" ")[0] ||
-  user?.displayName?.split(" ")[0] ||
-  user?.email?.split("@")[0] ||
-  activeMember?.name?.split(" ")[0] ||
-  "Sürücü";
+  const displayName = familyLoading
+    ? "Yükleniyor..."
+    : profile?.full_name?.split(" ")[0] ||
+      user?.displayName?.split(" ")[0] ||
+      user?.email?.split("@")[0] ||
+      activeMember?.name?.split(" ")[0] ||
+      "Sürücü";
   
   return (
     <div className="flex flex-col gap-8 pb-12 w-full overflow-x-hidden">

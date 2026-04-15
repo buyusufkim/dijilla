@@ -95,6 +95,9 @@ export const StepConfirmation: React.FC<StepConfirmationProps> = ({
             </>
           )}
         </motion.button>
+        <p className="text-[10px] text-white/30 text-center px-4">
+          * Talebiniz Droto sistemine kaydedilecek ve WhatsApp üzerinden operatöre iletilecektir. Fotoğraflar sistem kaydınızda saklanır.
+        </p>
         <Button 
           variant="ghost"
           onClick={onBack}
