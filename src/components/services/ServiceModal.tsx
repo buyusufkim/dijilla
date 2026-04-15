@@ -21,6 +21,7 @@ interface ServiceModalProps {
   isProcessing: boolean;
   onAction: () => void;
   onNavigateToPlace: (lat: number, lon: number) => void;
+  vehicle?: any;
 }
 
 export const ServiceModal: React.FC<ServiceModalProps> = ({
@@ -32,6 +33,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
   isProcessing,
   onAction,
   onNavigateToPlace,
+  vehicle,
 }) => {
   const renderServiceContent = () => {
     if (showSuccess) {
@@ -50,6 +52,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
       case "Nöbetçi Eczane":
       case "Anlaşmalı Hastane":
       case "Oto Servisler":
+      case "Nöbetçi Noter":
         return (
           <div className="space-y-4">
             <p className="text-sm text-white/60 text-left">Size en yakın noktalar listelenmiştir:</p>
@@ -87,31 +90,6 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
           </div>
         );
 
-      case "Nöbetçi Noter":
-        const noterItems = [
-          { name: "1. Noter", dist: "0.8 km", addr: "Merkez Mah. No:5" },
-          { name: "2. Noter", dist: "2.1 km", addr: "Sanayi Sit. No:14" },
-        ];
-        return (
-          <div className="space-y-4">
-            <p className="text-sm text-white/60 text-left">Size en yakın nöbetçi noterler:</p>
-            <div className="space-y-3">
-              {noterItems.map((item, i) => (
-                <div key={i} className="p-4 bg-[#0A1128] rounded-xl border border-white/5 flex items-center justify-between group hover:border-[#00E5FF]/30 transition-all cursor-pointer">
-                  <div className="text-left">
-                    <p className="font-bold text-sm">{item.name}</p>
-                    <p className="text-xs text-white/40 mt-1">{item.addr}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-[#00E5FF]">{item.dist}</p>
-                    <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-white/50 ml-auto mt-1" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
       case "MTV Ödeme":
       case "Trafik Cezası":
         return (
@@ -119,11 +97,14 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             <div className="space-y-4">
               <div className="p-4 bg-[#0A1128] rounded-xl border border-white/5 text-left">
                 <p className="text-xs text-white/40 uppercase font-bold tracking-widest mb-2">Araç Plakası</p>
-                <p className="text-lg font-bold">34 ABC 123</p>
+                <p className="text-lg font-bold">{vehicle?.plate || "Araç Seçilmedi"}</p>
               </div>
               <div className="p-4 bg-[#0A1128] rounded-xl border border-white/5 text-left flex justify-between items-center">
                 <div>
-                  <p className="text-xs text-white/40 uppercase font-bold tracking-widest mb-1">Toplam Borç</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-xs text-white/40 uppercase font-bold tracking-widest">Toplam Borç</p>
+                    <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1 rounded font-bold uppercase">Demo</span>
+                  </div>
                   <p className="text-2xl font-bold text-[#00E5FF]">₺1.450,00</p>
                 </div>
                 <div className="text-xs bg-[#00E5FF]/10 text-[#00E5FF] px-2 py-1 rounded">Vadesi Geçmiş</div>
@@ -131,7 +112,7 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
             </div>
             <Button 
               onClick={onAction}
-              disabled={isProcessing}
+              disabled={isProcessing || !vehicle}
               className="w-full py-6 bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] font-bold rounded-xl"
             >
               {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Şimdi Öde"}
@@ -140,10 +121,19 @@ export const ServiceModal: React.FC<ServiceModalProps> = ({
         );
 
       case "Muayene Randevusu":
+        const nextDates = Array.from({ length: 4 }, (_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() + i + 1);
+          return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
+        });
         return (
           <div className="space-y-6">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-xs text-white/40 uppercase font-bold tracking-widest">Müsait Tarihler</p>
+              <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1 rounded font-bold uppercase">Demo</span>
+            </div>
             <div className="grid grid-cols-2 gap-3">
-              {["12 Nisan", "13 Nisan", "14 Nisan", "15 Nisan"].map(date => (
+              {nextDates.map(date => (
                 <button key={date} className="p-3 bg-[#0A1128] border border-white/10 rounded-xl text-sm hover:border-[#00E5FF] transition-all">
                   {date}
                 </button>

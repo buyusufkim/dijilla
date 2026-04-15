@@ -38,6 +38,8 @@ export default function Fuel() {
   const [loadingStations, setLoadingStations] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
   const [locationInfo, setLocationInfo] = useState<{city: string, district: string} | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const isDemoMode = process.env.ENABLE_DEMO_MODE === "true";
 
   useEffect(() => {
     if (!userLocation) return;
@@ -146,127 +148,98 @@ export default function Fuel() {
           const lon = el.lon || el.center?.lon;
           const dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, lat, lon);
           
-          // Better name detection
           let name = el.tags?.name || el.tags?.brand || el.tags?.operator || (activeTab === "fuel" ? "Akaryakıt İstasyonu" : "Şarj İstasyonu");
           
-          // Clean up common brand names if they are in tags
           if (!el.tags?.name && el.tags?.brand) {
             name = el.tags.brand;
           }
           
-          // Generate realistic prices based on current Turkey market averages (April 2024)
-          if (activeTab === "fuel") {
-            const baseBenzin = 43.50;
-            const baseMotorin = 42.10;
-            const baseLpg = 21.90;
-            
-            // Add slight variation (+/- 0.30 TL) for realism
-            const benzin = baseBenzin + (Math.random() * 0.6 - 0.3);
-            const motorin = baseMotorin + (Math.random() * 0.6 - 0.3);
-            const lpg = baseLpg + (Math.random() * 0.4 - 0.2);
-            
-            return {
-              id: el.id.toString(),
-              name,
-              distance: `${dist.toFixed(1)} km`,
-              distanceValue: dist,
-              prices: {
-                benzin: `${benzin.toFixed(2)} TL`,
-                motorin: `${motorin.toFixed(2)} TL`,
-                lpg: `${lpg.toFixed(2)} TL`
-              },
-              priceValue: benzin, // for sorting
-              rating: 3.5 + Math.random() * 1.5,
-              type: activeTab,
-              status: "open",
-              address: el.tags?.["addr:street"] || el.tags?.["addr:city"] || "Adres bilgisi yok",
-              lat,
-              lon
-            };
-          } else {
-            const basePrice = 8.50; // Average TL/kWh
-            const price = basePrice + (Math.random() * 2 - 1);
-            return {
-              id: el.id.toString(),
-              name,
-              distance: `${dist.toFixed(1)} km`,
-              distanceValue: dist,
-              price: `${price.toFixed(2)} TL/kWh`,
-              priceValue: price,
-              rating: 3.5 + Math.random() * 1.5,
-              type: activeTab,
-              status: "open",
-              address: el.tags?.["addr:street"] || el.tags?.["addr:city"] || "Adres bilgisi yok",
-              lat,
-              lon
-            };
-          }
+          return {
+            id: el.id.toString(),
+            name,
+            distance: `${dist.toFixed(1)} km`,
+            distanceValue: dist,
+            prices: undefined, // No real-time prices from Overpass
+            price: undefined,
+            priceValue: 0,
+            rating: 4.0, // Neutral rating
+            type: activeTab,
+            status: "open",
+            address: el.tags?.["addr:street"] || el.tags?.["addr:city"] || "Adres bilgisi yok",
+            lat,
+            lon,
+            isDemo: false
+          };
         });
         
         setStations(fetchedStations);
+        setLastUpdated(new Date().toISOString());
+        localStorage.setItem(`last_stations_${activeTab}`, JSON.stringify({
+          data: fetchedStations,
+          timestamp: new Date().toISOString()
+        }));
       } catch (error) {
         console.error("Error fetching stations:", error);
-        // Fallback to mock data if API fails
-        const mockStations: Station[] = [
-          {
-            id: "m1",
-            name: activeTab === "fuel" ? "Shell Petrol" : "ZES Şarj İstasyonu",
-            distance: "1.2 km",
-            distanceValue: 1.2,
-            prices: activeTab === "fuel" ? {
-              benzin: "43.65 TL",
-              motorin: "42.25 TL",
-              lpg: "21.95 TL"
-            } : undefined,
-            price: activeTab === "electric" ? "8.50 TL/kWh" : undefined,
-            priceValue: activeTab === "fuel" ? 43.65 : 8.50,
-            rating: 4.8,
-            type: activeTab,
-            status: "open",
-            address: "Merkez Mah. Atatürk Cad. No:45",
-            lat: userLocation.lat + 0.01,
-            lon: userLocation.lon + 0.01
-          },
-          {
-            id: "m2",
-            name: activeTab === "fuel" ? "Opet" : "Eşarj Noktası",
-            distance: "2.5 km",
-            distanceValue: 2.5,
-            prices: activeTab === "fuel" ? {
-              benzin: "43.45 TL",
-              motorin: "42.05 TL",
-              lpg: "21.85 TL"
-            } : undefined,
-            price: activeTab === "electric" ? "7.90 TL/kWh" : undefined,
-            priceValue: activeTab === "fuel" ? 43.45 : 7.90,
-            rating: 4.5,
-            type: activeTab,
-            status: "open",
-            address: "Cumhuriyet Mah. İstanbul Yolu 3. km",
-            lat: userLocation.lat - 0.015,
-            lon: userLocation.lon + 0.005
-          },
-          {
-            id: "m3",
-            name: activeTab === "fuel" ? "Petrol Ofisi" : "Trugo Şarj",
-            distance: "3.8 km",
-            distanceValue: 3.8,
-            prices: activeTab === "fuel" ? {
-              benzin: "43.55 TL",
-              motorin: "42.15 TL",
-              lpg: "22.05 TL"
-            } : undefined,
-            price: activeTab === "electric" ? "9.20 TL/kWh" : undefined,
-            priceValue: activeTab === "fuel" ? 43.55 : 9.20,
-            rating: 4.2,
-            type: activeTab,
-            status: "open",
-            address: "Yavuz Selim Cad. No:12",
-            lat: userLocation.lat + 0.005,
-            lon: userLocation.lon - 0.02
-          }
-        ];
-        setStations(mockStations);
+        
+        // Try to load from cache first
+        const cached = localStorage.getItem(`last_stations_${activeTab}`);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          setStations(data);
+          setLastUpdated(timestamp);
+          return;
+        }
+
+        // Fallback to mock data ONLY if demo mode is enabled
+        if (isDemoMode) {
+          const mockStations: Station[] = [
+            {
+              id: "m1",
+              name: activeTab === "fuel" ? "Shell Petrol (Demo)" : "ZES Şarj İstasyonu (Demo)",
+              distance: "1.2 km",
+              distanceValue: 1.2,
+              prices: activeTab === "fuel" ? {
+                benzin: "43.65 TL",
+                motorin: "42.25 TL",
+                lpg: "21.95 TL"
+              } : undefined,
+              price: activeTab === "electric" ? "8.50 TL/kWh" : undefined,
+              priceValue: activeTab === "fuel" ? 43.65 : 8.50,
+              rating: 4.8,
+              type: activeTab,
+              status: "open",
+              address: "Merkez Mah. Atatürk Cad. No:45",
+              lat: userLocation.lat + 0.01,
+              lon: userLocation.lon + 0.01,
+              isDemo: true
+            },
+            {
+              id: "m2",
+              name: activeTab === "fuel" ? "Opet (Demo)" : "Eşarj Noktası (Demo)",
+              distance: "2.5 km",
+              distanceValue: 2.5,
+              prices: activeTab === "fuel" ? {
+                benzin: "43.45 TL",
+                motorin: "42.05 TL",
+                lpg: "21.85 TL"
+              } : undefined,
+              price: activeTab === "electric" ? "7.90 TL/kWh" : undefined,
+              priceValue: activeTab === "fuel" ? 43.45 : 7.90,
+              rating: 4.5,
+              type: activeTab,
+              status: "open",
+              address: "Cumhuriyet Mah. İstanbul Yolu 3. km",
+              lat: userLocation.lat - 0.015,
+              lon: userLocation.lon + 0.005,
+              isDemo: true
+            }
+          ];
+          setStations(mockStations);
+          setLastUpdated(null);
+        } else {
+          setStations([]);
+          setLastUpdated(null);
+        }
       } finally {
         setLoadingStations(false);
       }
@@ -427,14 +400,19 @@ export default function Fuel() {
       <MapSection userLocation={userLocation} filteredStations={filteredStations} />
 
       {/* Company Prices Section */}
-      <CompanyPrices activeTab={activeTab} locationInfo={locationInfo} />
+      <CompanyPrices activeTab={activeTab} locationInfo={locationInfo} isDemoMode={isDemoMode} />
 
       {/* Stations List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <div className="flex flex-col">
             <h2 className="text-sm font-medium text-white/60 uppercase tracking-wider">Yakındaki İstasyonlar</h2>
-            <p className="text-[10px] text-white/30 mt-0.5">Son Güncelleme: {new Date().toLocaleDateString('tr-TR')} {new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</p>
+            <p className="text-[10px] text-white/30 mt-0.5">
+              {lastUpdated 
+                ? `Son Güncelleme: ${new Date(lastUpdated).toLocaleDateString('tr-TR')} ${new Date(lastUpdated).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`
+                : "Anlık fiyat alınamadı"}
+              {isDemoMode && <span className="ml-2 text-amber-500/60">(Demo Modu)</span>}
+            </p>
           </div>
           <span className="text-xs text-[#00E5FF] font-medium">
             {sortBy === "distance" ? "En Yakın" : sortBy === "price" ? "En Ucuz" : "En Yüksek Puanlı"}

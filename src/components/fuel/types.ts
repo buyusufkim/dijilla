@@ -18,6 +18,7 @@ export type Station = {
   address: string;
   lat: number;
   lon: number;
+  isDemo?: boolean;
 };
 
 export const DefaultIcon = L.icon({

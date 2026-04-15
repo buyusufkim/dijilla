@@ -12,6 +12,7 @@ interface FamilyContextType {
   activeMember: FamilyMember | null;
   setActiveMember: (member: FamilyMember | null) => void;
   addMember: (member: FamilyMember) => void;
+  removeMember: (id: string) => void;
 }
 
 const defaultMembers: FamilyMember[] = [];
@@ -20,14 +21,18 @@ const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 
 export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<FamilyMember[]>(defaultMembers);
-const [activeMember, setActiveMember] = useState<FamilyMember | null>(defaultMembers[0] ?? null);
+  const [activeMember, setActiveMember] = useState<FamilyMember | null>(defaultMembers[0] ?? null);
 
   const addMember = (member: FamilyMember) => {
     setMembers((prev) => [...prev, member]);
   };
 
+  const removeMember = (id: string) => {
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+  };
+
   return (
-    <FamilyContext.Provider value={{ members, activeMember, setActiveMember, addMember }}>
+    <FamilyContext.Provider value={{ members, activeMember, setActiveMember, addMember, removeMember }}>
       {children}
     </FamilyContext.Provider>
   );

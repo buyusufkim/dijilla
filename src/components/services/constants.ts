@@ -8,10 +8,56 @@ import {
   Fuel,
   BarChart3,
   Bot,
+  Map,
 } from "lucide-react";
 import { ServiceCategory } from "./types";
 
 export const categories: ServiceCategory[] = [
+  {
+    title: "Akıllı Yönetim",
+    items: [
+      {
+        icon: FileText,
+        label: "Dijital Torpido",
+        color: "text-[#00E5FF]",
+        bg: "bg-[#00E5FF]/10",
+        desc: "Belgelerinizi dijital ortamda saklayın.",
+        link: "/glovebox"
+      },
+      {
+        icon: Map,
+        label: "Seyahat Danışmanı",
+        color: "text-[#FF3D00]",
+        bg: "bg-[#FF3D00]/10",
+        desc: "Rota planlayın ve ihtiyaçlarınızı belirleyin.",
+        link: "/travel-advisor"
+      },
+      {
+        icon: Fuel,
+        label: "Yakıt & Şarj",
+        color: "text-[#FFD600]",
+        bg: "bg-[#FFD600]/10",
+        desc: "En uygun istasyonları bulun.",
+        link: "/fuel"
+      },
+      {
+        icon: BarChart3,
+        label: "Gider Takibi",
+        color: "text-[#00E676]",
+        bg: "bg-[#00E676]/10",
+        desc: "Harcamalarınızı analiz edin.",
+        link: "/expenses"
+      },
+      {
+        icon: Bot,
+        label: "AI Teşhis",
+        color: "text-purple-400",
+        bg: "bg-purple-400/10",
+        desc: "Yapay zeka ile arıza teşhisi.",
+        link: "/ai-assistant"
+      },
+    ],
+  },
   {
     title: "Acil & Sağlık",
     items: [
@@ -88,43 +134,6 @@ export const categories: ServiceCategory[] = [
         color: "text-pink-400",
         bg: "bg-pink-400/10",
         desc: "TÜVTÜRK randevusu alın.",
-      },
-    ],
-  },
-  {
-    title: "Akıllı Yönetim",
-    items: [
-      {
-        icon: FileText,
-        label: "Dijital Torpido",
-        color: "text-[#00E5FF]",
-        bg: "bg-[#00E5FF]/10",
-        desc: "Belgelerinizi dijital ortamda saklayın.",
-        link: "/glovebox"
-      },
-      {
-        icon: Fuel,
-        label: "Yakıt & Şarj",
-        color: "text-[#FFD600]",
-        bg: "bg-[#FFD600]/10",
-        desc: "En uygun istasyonları bulun.",
-        link: "/fuel"
-      },
-      {
-        icon: BarChart3,
-        label: "Gider Takibi",
-        color: "text-[#00E676]",
-        bg: "bg-[#00E676]/10",
-        desc: "Harcamalarınızı analiz edin.",
-        link: "/expenses"
-      },
-      {
-        icon: Bot,
-        label: "AI Teşhis",
-        color: "text-purple-400",
-        bg: "bg-purple-400/10",
-        desc: "Yapay zeka ile arıza teşhisi.",
-        link: "/ai-assistant"
       },
     ],
   },

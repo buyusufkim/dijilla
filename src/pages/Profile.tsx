@@ -20,12 +20,14 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase";
 import { doc, getDoc, updateDoc } from "@/firebase";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function Profile() {
-  const { members, activeMember, addMember } = useFamily();
+  const { members, activeMember, addMember, removeMember } = useFamily();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState<"spouse" | "child" | "parent">("child");
   const [profile, setProfile] = useState<any>(null);
@@ -100,6 +102,16 @@ export default function Profile() {
     
     setNewMemberName("");
     setIsAddingMember(false);
+    toast.success(`${newMemberName} aileye eklendi.`);
+  };
+
+  const handleDeleteMember = () => {
+    if (memberToDelete) {
+      const member = members.find(m => m.id === memberToDelete);
+      removeMember(memberToDelete);
+      toast.success(`${member?.name} aileden çıkarıldı.`);
+      setMemberToDelete(null);
+    }
   };
 
   const handleSignOut = async () => {
@@ -168,7 +180,10 @@ export default function Profile() {
                       </p>
                     </div>
                   </div>
-                  <button className="p-2 text-white/40 hover:text-[#FF3D00] transition-colors">
+                  <button 
+                    onClick={() => setMemberToDelete(member.id)}
+                    className="p-2 text-white/40 hover:text-[#FF3D00] transition-colors"
+                  >
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
@@ -226,7 +241,10 @@ export default function Profile() {
                     </span>
                   </h3>
                 </div>
-                <Button className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md px-8">
+                <Button 
+                  onClick={() => toast.info("Puan kullanımı yakında aktif olacaktır.")}
+                  className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md px-8"
+                >
                   Puanları Kullan
                 </Button>
               </CardContent>
@@ -245,16 +263,19 @@ export default function Profile() {
                 icon={CreditCard}
                 label="Ödeme Yöntemleri"
                 color="text-[#00E5FF]"
+                onClick={() => toast.info("Ödeme yöntemleri yönetimi yakında aktif olacaktır.")}
               />
               <MenuItem
                 icon={Settings}
                 label="Uygulama Ayarları"
                 color="text-white/80"
+                onClick={() => toast.info("Uygulama ayarları yakında aktif olacaktır.")}
               />
               <MenuItem
                 icon={HelpCircle}
                 label="Destek & SSS"
                 color="text-white/80"
+                onClick={() => toast.info("Destek merkezi yakında aktif olacaktır.")}
               />
               <button 
                 onClick={handleSignOut}
@@ -334,6 +355,46 @@ export default function Profile() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {memberToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-sm"
+            >
+              <Card className="bg-[#1A233A] border-white/10 shadow-2xl">
+                <CardHeader>
+                  <CardTitle>Üyeyi Çıkar</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <p className="text-white/60 text-sm">
+                    Bu aile üyesini listeden çıkarmak istediğinize emin misiniz?
+                  </p>
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setMemberToDelete(null)}
+                      className="flex-1 border-white/10 text-white hover:bg-white/5"
+                    >
+                      Vazgeç
+                    </Button>
+                    <Button 
+                      onClick={handleDeleteMember}
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      Çıkar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -361,9 +422,12 @@ function NotificationToggle({ label, description, isActive, onToggle }: any) {
   );
 }
 
-function MenuItem({ icon: Icon, label, color, hideArrow }: any) {
+function MenuItem({ icon: Icon, label, color, hideArrow, onClick }: any) {
   return (
-    <button className="w-full flex items-center justify-between p-4 bg-[#0A1128] rounded-xl border border-white/5 hover:border-white/20 transition-all active:scale-[0.98]">
+    <button 
+      onClick={onClick}
+      className="w-full flex items-center justify-between p-4 bg-[#0A1128] rounded-xl border border-white/5 hover:border-white/20 transition-all active:scale-[0.98]"
+    >
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
           <Icon className={`w-5 h-5 ${color}`} />

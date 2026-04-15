@@ -37,9 +37,23 @@ export const StationCard: React.FC<StationCardProps> = ({ station }) => {
                     <span className="text-xs text-white/60">{station.rating.toFixed(1)}</span>
                     <span className="text-white/20">•</span>
                     <span className="text-xs text-white/60">{station.distance}</span>
+                    {station.isDemo && (
+                      <span className="ml-1 text-[8px] bg-amber-500/20 text-amber-500 px-1 rounded-full font-bold uppercase">Demo</span>
+                    )}
                   </div>
                 </div>
               </div>
+              {station.type === "fuel" && station.prices && (
+                <div className="text-right">
+                  <p className="text-sm font-bold text-[#00E676]">{station.prices.benzin}</p>
+                  <p className="text-[8px] text-white/40 uppercase">Benzin</p>
+                </div>
+              )}
+              {station.type === "electric" && station.price && (
+                <div className="text-right">
+                  <p className="text-sm font-bold text-[#FFD600]">{station.price}</p>
+                </div>
+              )}
             </div>
             <div className="flex items-start gap-2 px-1">
               <MapPin className="w-3.5 h-3.5 text-white/30 mt-0.5 shrink-0" />

@@ -48,6 +48,7 @@ export type Database = {
           currency: string
           coverage_details: Json
           status: string
+          is_demo: boolean
           created_at: string
         }
         Insert: {
@@ -59,6 +60,7 @@ export type Database = {
           currency: string
           coverage_details: Json
           status?: string
+          is_demo?: boolean
           created_at?: string
         }
         Update: {
@@ -70,6 +72,7 @@ export type Database = {
           currency?: string
           coverage_details?: Json
           status?: string
+          is_demo?: boolean
           created_at?: string
         }
       }
@@ -395,8 +398,7 @@ export interface ApiResponse<T> {
 
 export enum QuoteType {
   TRAFFIC = "traffic",
-  CASCO = "casco",
-  ASSISTANCE = "assistance"
+  CASCO = "casco"
 }
 
 export enum QuoteStatus {

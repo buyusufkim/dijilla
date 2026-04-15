@@ -44,7 +44,8 @@ export class FakeTrafficProviderAdapter extends BaseProviderAdapter {
       premium: rawOffer.price,
       currency: rawOffer.currency,
       coverage_details: rawOffer.details,
-      status: "active"
+      status: "active",
+      is_demo: true
     };
   }
 }

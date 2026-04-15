@@ -8,8 +8,26 @@ export const auth = {
 };
 
 const authListeners: AuthListener[] = [];
-const MOCK_USER_ID = '00000000-0000-0000-0000-000000000000';
+const LEGACY_MOCK_USER_ID = '00000000-0000-0000-0000-000000000000';
 const MOCK_USER_STORAGE_KEY = 'droto_mock_user';
+
+/**
+ * Generates a deterministic UUID-like string from an email.
+ * This ensures data isolation between different demo accounts.
+ */
+const generateDemoUserId = (email: string) => {
+  const cleanEmail = email.toLowerCase().trim();
+  let hash = 0;
+  for (let i = 0; i < cleanEmail.length; i++) {
+    const char = cleanEmail.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  const hex = Math.abs(hash).toString(16).padStart(8, '0');
+  // Format: demo-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  return `demo-${hex}-${hex.substring(0, 4)}-${hex.substring(4, 8)}-${hex}${hex}`;
+};
 
 const notifyAuthListeners = (user: User | null) => {
   auth.currentUser = user;
@@ -54,6 +72,10 @@ const mapSessionUser = (sessionUser: any): User => ({
   email: sessionUser.email || null,
   displayName: sessionUser.user_metadata?.full_name || null,
   photoURL: sessionUser.user_metadata?.avatar_url || null,
+  getIdToken: async () => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
+  }
 });
 
 export const onAuthStateChanged = (
@@ -77,6 +99,8 @@ export const onAuthStateChanged = (
         const mockUser = getStoredMockUser();
 
         if (mockUser) {
+          // Re-attach getIdToken to mock user from storage
+          mockUser.getIdToken = async () => `mock-token:${mockUser.email}`;
           setScopeForUser(mockUser);
           notifyAuthListeners(mockUser);
         } else {
@@ -100,6 +124,7 @@ export const onAuthStateChanged = (
         const mockUser = getStoredMockUser();
 
         if (mockUser) {
+          mockUser.getIdToken = async () => `mock-token:${mockUser.email}`;
           setScopeForUser(mockUser);
           auth.currentUser = mockUser;
           callback(mockUser);
@@ -114,6 +139,7 @@ export const onAuthStateChanged = (
     const mockUser = getStoredMockUser();
 
     if (mockUser) {
+      mockUser.getIdToken = async () => `mock-token:${mockUser.email}`;
       setScopeForUser(mockUser);
       auth.currentUser = mockUser;
       callback(mockUser);
@@ -140,10 +166,11 @@ export const signInWithEmailAndPassword = async (
     console.log('Using mock login for demo.');
 
     const mockUser: User = {
-      uid: MOCK_USER_ID,
+      uid: generateDemoUserId(email),
       email,
       displayName: 'Ahmet Yılmaz',
       photoURL: null,
+      getIdToken: async () => `mock-token:${email}`,
     };
 
     setStoredMockUser(mockUser);
@@ -181,10 +208,11 @@ export const createUserWithEmailAndPassword = async (
     console.log('Using mock signup for demo.');
 
     const mockUser: User = {
-      uid: MOCK_USER_ID,
+      uid: generateDemoUserId(email),
       email,
       displayName: fullName || null,
       photoURL: null,
+      getIdToken: async () => `mock-token:${email}`,
     };
 
     setStoredMockUser(mockUser);
@@ -214,6 +242,10 @@ export const createUserWithEmailAndPassword = async (
     email: data.user!.email || null,
     displayName: data.user!.user_metadata?.full_name || null,
     photoURL: data.user!.user_metadata?.avatar_url || null,
+    getIdToken: async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      return sessionData.session?.access_token || null;
+    }
   };
 
   // Only notify listeners if we have a session (auto-login enabled)

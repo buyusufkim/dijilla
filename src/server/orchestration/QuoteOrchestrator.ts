@@ -28,14 +28,28 @@ export class QuoteOrchestrator {
 
     // Filter adapters by quote type
     const filteredAdapters = this.adapters.filter(adapter => {
-      if (quoteRequest.type === "traffic") return adapter instanceof FakeTrafficProviderAdapter;
-      if (quoteRequest.type === "casco") return adapter instanceof FakeCascoProviderAdapter;
-      // Add assistance adapters here when implemented
-      return false;
+      switch (quoteRequest.type) {
+        case "traffic":
+          return adapter instanceof FakeTrafficProviderAdapter;
+        case "casco":
+          return adapter instanceof FakeCascoProviderAdapter;
+        default:
+          console.error(`[QuoteOrchestrator] Unsupported quote type: ${quoteRequest.type}`);
+          return false;
+      }
     });
 
     if (filteredAdapters.length === 0) {
-      console.warn(`[QuoteOrchestrator] No adapters found for type: ${quoteRequest.type}`);
+      const errorMsg = `[QuoteOrchestrator] No adapters found for type: ${quoteRequest.type}`;
+      console.error(errorMsg);
+      
+      // Update status to failed immediately if no adapters found
+      await (supabaseAdmin
+        .from("quote_requests") as any)
+        .update({ status: QuoteStatus.FAILED })
+        .eq("id", quoteRequest.id);
+        
+      return;
     }
 
     // Update status to processing

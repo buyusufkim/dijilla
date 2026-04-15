@@ -9,11 +9,30 @@ export interface AuthRequest extends Request {
 }
 
 /**
+ * Generates a deterministic UUID-like string from an email.
+ * This ensures data isolation between different demo accounts.
+ */
+const generateDemoUserId = (email: string) => {
+  const cleanEmail = email.toLowerCase().trim();
+  let hash = 0;
+  for (let i = 0; i < cleanEmail.length; i++) {
+    const char = cleanEmail.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  const hex = Math.abs(hash).toString(16).padStart(8, '0');
+  return `demo-${hex}-${hex.substring(0, 4)}-${hex.substring(4, 8)}-${hex}${hex}`;
+};
+
+/**
  * Auth Middleware
  * Verifies the Supabase JWT from the Authorization header.
+ * Supports a secure Demo Mode for testing when ENABLE_DEMO_MODE is true.
  */
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
+  const isDemoEnabled = process.env.ENABLE_DEMO_MODE === "true";
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({
@@ -23,6 +42,17 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
   }
 
   const token = authHeader.split(" ")[1];
+
+  // Handle Demo Mode
+  if (isDemoEnabled && token.startsWith("mock-token")) {
+    const email = token.includes(":") ? token.split(":")[1] : "demo@droto.com";
+    console.log(`[Auth] Demo request authorized for ${email}`);
+    req.user = {
+      id: generateDemoUserId(email),
+      email: email
+    };
+    return next();
+  }
 
   try {
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);

@@ -76,7 +76,8 @@ export class QuoteService {
       coverageDetails: offer.coverage_details,
       status: offer.status,
       score: offer.score,
-      badges: offer.badges
+      badges: offer.badges,
+      isDemo: !!offer.is_demo
     }));
 
     return {

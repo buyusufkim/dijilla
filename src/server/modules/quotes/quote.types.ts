@@ -28,6 +28,7 @@ export interface OfferDTO {
   status: string;
   score: number;
   badges: string[];
+  isDemo: boolean;
 }
 
 export interface QuoteResponseDTO {

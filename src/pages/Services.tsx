@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { db } from "@/firebase";
-import { collection, addDoc, serverTimestamp } from "@/firebase";
+import { collection, addDoc, serverTimestamp, query, where, onSnapshot } from "@/firebase";
 import { useAuth } from "@/context/AuthContext";
 
 import { ServiceHeader } from "@/components/services/ServiceHeader";
@@ -23,6 +23,21 @@ export default function Services() {
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const q = query(collection(db, "vehicles"), where("user_id", "==", user.uid));
+    const unsubscribe = onSnapshot(q, (snapshot: any) => {
+      const vData = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      setVehicles(vData);
+      if (vData.length > 0) {
+        setSelectedVehicle(vData[0]);
+      }
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -53,6 +68,7 @@ export default function Services() {
     if (type === "Nöbetçi Eczane") amenity = "pharmacy";
     else if (type === "Anlaşmalı Hastane") amenity = "hospital";
     else if (type === "Oto Servisler") amenity = "car_repair";
+    else if (type === "Nöbetçi Noter") amenity = "notary";
     else {
       setLoadingPlaces(false);
       return;
@@ -66,6 +82,9 @@ export default function Services() {
           node["amenity"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
           way["amenity"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
           relation["amenity"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
+          node["office"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
+          way["office"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
+          relation["office"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
         );
         out center;
       `;
@@ -97,7 +116,7 @@ export default function Services() {
         const dist = calculateDistance(userLocation.lat, userLocation.lon, lat, lon);
         return {
           id: el.id,
-          name: el.tags?.name || (amenity === "pharmacy" ? "Eczane" : amenity === "hospital" ? "Hastane" : "Oto Servis"),
+          name: el.tags?.name || (amenity === "pharmacy" ? "Eczane" : amenity === "hospital" ? "Hastane" : amenity === "notary" ? "Noter" : "Oto Servis"),
           addr: el.tags?.["addr:street"] ? `${el.tags["addr:street"]} ${el.tags["addr:housenumber"] || ""}` : "Adres bilgisi yok",
           dist: dist,
           lat,
@@ -134,7 +153,7 @@ export default function Services() {
   };
 
   useEffect(() => {
-    if (selectedService && ["Nöbetçi Eczane", "Anlaşmalı Hastane", "Oto Servisler"].includes(selectedService.label)) {
+    if (selectedService && ["Nöbetçi Eczane", "Anlaşmalı Hastane", "Oto Servisler", "Nöbetçi Noter"].includes(selectedService.label)) {
       fetchPlaces(selectedService.label);
     }
   }, [selectedService, userLocation]);
@@ -238,6 +257,7 @@ export default function Services() {
         isProcessing={isProcessing}
         onAction={handleAction}
         onNavigateToPlace={handleNavigateToPlace}
+        vehicle={selectedVehicle}
       />
     </div>
   );

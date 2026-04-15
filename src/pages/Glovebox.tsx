@@ -29,6 +29,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase";
 import { collection, query, where, onSnapshot, orderBy, addDoc, deleteDoc, doc } from "@/firebase";
+import { toast } from "sonner";
 
 type Document = {
   id: string;
@@ -45,6 +46,7 @@ export default function Glovebox() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [viewingDoc, setViewingDoc] = useState<Document | null>(null);
   const [newDoc, setNewDoc] = useState({
     title: "",
     type: "other" as Document["type"],
@@ -129,8 +131,10 @@ export default function Glovebox() {
       
       setIsAddOpen(false);
       setNewDoc({ title: "", type: "other", expiry_date: "" });
+      toast.success("Belge başarıyla eklendi.");
     } catch (error) {
       console.error("Error adding document:", error);
+      toast.error("Belge eklenirken bir hata oluştu.");
     } finally {
       setIsSubmitting(false);
     }
@@ -139,8 +143,10 @@ export default function Glovebox() {
   const handleDelete = async (id: string) => {
     try {
       await deleteDoc(doc(db, "documents", id));
+      toast.success("Belge silindi.");
     } catch (error) {
       console.error("Error deleting document:", error);
+      toast.error("Belge silinirken bir hata oluştu.");
     }
   };
 
@@ -266,7 +272,10 @@ export default function Glovebox() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button className="p-2 text-white/40 hover:text-white transition-colors">
+                        <button 
+                          onClick={() => setViewingDoc(doc)}
+                          className="p-2 text-white/40 hover:text-white transition-colors"
+                        >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button onClick={() => handleDelete(doc.id)} className="p-2 text-white/40 hover:text-[#FF5252] transition-colors">
@@ -290,11 +299,76 @@ export default function Glovebox() {
           </div>
           <h3 className="font-semibold mb-1">Yeni Belge Tara</h3>
           <p className="text-sm text-white/40 mb-4">Belgenizin fotoğrafını çekin, Droto otomatik olarak bilgileri okusun.</p>
-          <Button variant="outline" className="border-[#00E5FF]/30 text-[#00E5FF] hover:bg-[#00E5FF]/10 rounded-xl">
+          <Button 
+            onClick={() => toast.info("Demo modunda kamera erişimi kısıtlıdır. Lütfen manuel ekleme yapın.")}
+            variant="outline" 
+            className="border-[#00E5FF]/30 text-[#00E5FF] hover:bg-[#00E5FF]/10 rounded-xl"
+          >
             Kamerayı Aç
           </Button>
         </CardContent>
       </Card>
+
+      {/* View Document Modal */}
+      <AnimatePresence>
+        {viewingDoc && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md"
+            >
+              <Card className="bg-[#1A233A] border-white/10 shadow-2xl">
+                <CardHeader className="flex flex-row items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getStatusColor(viewingDoc.status)}`}>
+                      {getTypeIcon(viewingDoc.type)}
+                    </div>
+                    <DialogTitle>{viewingDoc.title}</DialogTitle>
+                  </div>
+                  <button 
+                    onClick={() => setViewingDoc(null)}
+                    className="p-1 text-white/50 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="aspect-[4/3] bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+                    <div className="text-center">
+                      <FileText className="w-12 h-12 text-white/20 mx-auto mb-2" />
+                      <p className="text-xs text-white/40">Belge Görüntüsü (Demo)</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-white/5 rounded-xl">
+                      <p className="text-[10px] text-white/40 uppercase font-bold mb-1">Tür</p>
+                      <p className="text-sm font-medium capitalize">{viewingDoc.type}</p>
+                    </div>
+                    <div className="p-3 bg-white/5 rounded-xl">
+                      <p className="text-[10px] text-white/40 uppercase font-bold mb-1">Durum</p>
+                      <p className={`text-sm font-medium capitalize ${viewingDoc.status === 'valid' ? 'text-[#00E676]' : viewingDoc.status === 'warning' ? 'text-[#FFD600]' : 'text-[#FF5252]'}`}>
+                        {viewingDoc.status === 'valid' ? 'Geçerli' : viewingDoc.status === 'warning' ? 'Yaklaşıyor' : 'Süresi Dolmuş'}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-white/5 rounded-xl col-span-2">
+                      <p className="text-[10px] text-white/40 uppercase font-bold mb-1">Son Geçerlilik Tarihi</p>
+                      <p className="text-sm font-medium">{viewingDoc.expiry_date}</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => setViewingDoc(null)}
+                    className="w-full bg-[#00E5FF] hover:bg-[#00B8D4] text-[#0A1128] font-bold"
+                  >
+                    Kapat
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
