@@ -28,7 +28,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const [activeMember, setActiveMember] = useState<FamilyMember | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const userId = user?.uid || "guest";
+  const userId = user?.id || user?.uid || "guest";
   
   const scopedStorageKey = useMemo(() => `droto_family_members_${userId}`, [userId]);
   const scopedActiveKey = useMemo(() => `droto_active_member_id_${userId}`, [userId]);

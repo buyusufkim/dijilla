@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/lib/supabase-service";
+import { db, auth } from "@/lib/supabase-service";
 
 type Step = 'FORM' | 'OFFER' | 'COMPARISON' | 'QUICK_BUY' | 'CONFIRMATION';
 
@@ -75,12 +75,16 @@ export default function InsurancePurchase() {
   }, [id]);
 
   const getAuthHeaders = useCallback(async () => {
-    // For Supabase, we might not need to manually get a token for internal API routes if they are handled differently,
-    // but for now let's keep it consistent with how the app was structured.
-    // In a real Supabase app, we'd use supabase.auth.getSession()
+    let token = user?.id || user?.uid;
+    
+    const { data } = await auth.getSession();
+    if (data.session?.access_token) {
+      token = data.session.access_token;
+    }
+
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${user?.id || user?.uid}`
+      'Authorization': `Bearer ${token}`
     };
   }, [user]);
 
@@ -464,9 +468,9 @@ export default function InsurancePurchase() {
                     <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Kart Sahibi</label>
                     <input 
                       type="text" 
-                      placeholder="Ad Soyad"
-                      defaultValue={user?.displayName || ""}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:border-[#00E5FF] outline-none transition-colors"
+                      readOnly
+                      defaultValue={user?.displayName || "Test Kullanıcı"}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-not-allowed outline-none transition-colors"
                     />
                   </div>
                   <div className="space-y-2">
@@ -474,9 +478,9 @@ export default function InsurancePurchase() {
                     <div className="relative">
                       <input 
                         type="text" 
-                        placeholder="0000 0000 0000 0000"
+                        readOnly
                         defaultValue="4242 4242 4242 4242"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:border-[#00E5FF] outline-none transition-colors font-mono"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-not-allowed outline-none transition-colors font-mono"
                       />
                       <CreditCard className="w-5 h-5 text-white/20 absolute right-4 top-1/2 -translate-y-1/2" />
                     </div>
@@ -486,18 +490,18 @@ export default function InsurancePurchase() {
                       <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">SKT</label>
                       <input 
                         type="text" 
-                        placeholder="AA/YY"
+                        readOnly
                         defaultValue="12/26"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:border-[#00E5FF] outline-none transition-colors font-mono"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-not-allowed outline-none transition-colors font-mono"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">CVV</label>
                       <input 
                         type="text" 
-                        placeholder="000"
+                        readOnly
                         defaultValue="123"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:border-[#00E5FF] outline-none transition-colors font-mono"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-not-allowed outline-none transition-colors font-mono"
                       />
                     </div>
                   </div>
