@@ -26,7 +26,7 @@ export const aiService = {
   async generateTravelRoute(prompt: string) {
     return callAiEndpoint({
       prompt,
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",  // ✅ DÜZELTİLDİ
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -64,7 +64,7 @@ export const aiService = {
   async generateMaintenanceRecommendations(prompt: string) {
     const data = await callAiEndpoint({
       prompt,
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",  // ✅ DÜZELTİLDİ
       config: { responseMimeType: "application/json" },
     });
     return data.text;
@@ -73,7 +73,7 @@ export const aiService = {
   async generateAssistantResponse(prompt: string) {
     const data = await callAiEndpoint({
       prompt,
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",  // ✅ DÜZELTİLDİ
     });
     return data.text;
   },
@@ -88,7 +88,7 @@ export const aiService = {
           ]
         }
       ],
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",  // ✅ DÜZELTİLDİ
       config: {
         systemInstruction: "Sen Droto'nun uzman araç arıza teşhis asistanısın. Fotoğrafları analiz ederek olası sorunları, ciddiyet seviyesini ve yapılması gerekenleri profesyonelce açıkla."
       }
