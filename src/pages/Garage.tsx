@@ -4,8 +4,7 @@ import { useFamily } from "@/context/FamilyContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import { collection, query, where, onSnapshot, addDoc, orderBy, serverTimestamp } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 
 import { Vehicle, HomeAsset } from "@/components/garage/types";
 import { GarageHeader } from "@/components/garage/GarageHeader";
@@ -42,54 +41,20 @@ export default function Garage() {
       return;
     }
 
-    const qVehicles = query(
-      collection(db, "vehicles"),
-      where("user_id", "==", user.uid),
-      orderBy("created_at", "desc")
-    );
-
-    const unsubscribeVehicles = onSnapshot(qVehicles, (snapshot: any) => {
-      const vehicleData = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Vehicle[];
-      setVehicles(vehicleData);
-      setLoading(false);
-    }, (error: any) => {
-      console.error("Error fetching vehicles:", error);
+    const unsubscribeVehicles = db.from("vehicles").subscribe((data) => {
+      const filtered = data.filter((v: any) => v.user_id === (user.id || user.uid));
+      setVehicles(filtered as Vehicle[]);
       setLoading(false);
     });
 
-    const qHomes = query(
-      collection(db, "homes"),
-      where("user_id", "==", user.uid),
-      orderBy("created_at", "desc")
-    );
-
-    const unsubscribeHomes = onSnapshot(qHomes, (snapshot: any) => {
-      const homeData = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      })) as HomeAsset[];
-      setHomes(homeData);
-    }, (error: any) => {
-      console.error("Error fetching homes:", error);
+    const unsubscribeHomes = db.from("homes").subscribe((data) => {
+      const filtered = data.filter((h: any) => h.user_id === (user.id || user.uid));
+      setHomes(filtered as HomeAsset[]);
     });
 
-    const qMaintenance = query(
-      collection(db, "maintenance_records"),
-      where("user_id", "==", user.uid),
-      orderBy("date", "desc")
-    );
-
-    const unsubscribeMaintenance = onSnapshot(qMaintenance, (snapshot: any) => {
-      const records = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setMaintenanceRecords(records);
-    }, (error: any) => {
-      console.error("Error fetching maintenance:", error);
+    const unsubscribeMaintenance = db.from("maintenance_records").subscribe((data) => {
+      const filtered = data.filter((m: any) => m.user_id === (user.id || user.uid));
+      setMaintenanceRecords(filtered);
     });
 
     return () => {
@@ -106,8 +71,8 @@ export default function Garage() {
       if (!assetName.trim() || !brand.trim() || !model.trim() || !year) return;
       setIsSubmitting(true);
       try {
-        await addDoc(collection(db, "vehicles"), {
-          user_id: user.uid,
+        await db.from("vehicles").insert({
+          user_id: user.id || user.uid,
           plate: assetName,
           brand_model: `${brand} ${model}`,
           year: Number(year),
@@ -115,8 +80,7 @@ export default function Garage() {
           fuel_type: fuelType,
           insurance_expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           inspection_expiry: inspectionExpiry,
-          tax_status: 'Ödendi',
-          created_at: serverTimestamp()
+          tax_status: 'Ödendi'
         });
 
         if (setReminder) {
@@ -145,11 +109,10 @@ export default function Garage() {
       if (!assetName.trim() || !assetDetail.trim()) return;
       setIsSubmitting(true);
       try {
-        await addDoc(collection(db, "homes"), {
-          user_id: user.uid,
+        await db.from("homes").insert({
+          user_id: user.id || user.uid,
           name: assetName,
-          address: assetDetail,
-          created_at: serverTimestamp()
+          address: assetDetail
         });
 
         setIsAddingAsset(false);

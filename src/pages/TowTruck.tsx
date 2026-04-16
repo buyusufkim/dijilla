@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "motion/react";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import { uploadFile, base64ToBlob } from "@/lib/storage";
 
 import { TowTruckHeader } from "@/components/tow-truck/TowTruckHeader";
@@ -74,16 +73,8 @@ export default function TowTruck() {
   const fetchVehicles = async () => {
     if (!user) return;
     try {
-      const q = query(
-        collection(db, "vehicles"),
-        where("user_id", "==", user.uid),
-        orderBy("created_at", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      const vehicleData = querySnapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      })) as any[];
+      const { data } = await db.from("vehicles").select("*");
+      const vehicleData = data?.filter((v: any) => v.user_id === (user.id || user.uid)) || [];
       
       setVehicles(vehicleData);
       if (vehicleData.length > 0) {
@@ -127,16 +118,16 @@ export default function TowTruck() {
         // 2. Convert to Blob
         const blob = base64ToBlob(compressedBase64);
         // 3. Upload to Storage
-        const fileName = `tow_${user.uid}_${Date.now()}.jpg`;
-        const storagePath = `service_requests/tow/${user.uid}/${fileName}`;
+        const fileName = `tow_${user.id || user.uid}_${Date.now()}.jpg`;
+        const storagePath = `service_requests/tow/${user.id || user.uid}/${fileName}`;
         const uploadResult = await uploadFile(blob, storagePath);
         
         photoUrl = uploadResult.url;
         photoPath = uploadResult.path;
       }
 
-      await addDoc(collection(db, "service_requests"), {
-        user_id: user.uid,
+      await db.from("service_requests").insert({
+        user_id: user.id || user.uid,
         type: "tow",
         plate: plate,
         phone: phone,
@@ -145,8 +136,7 @@ export default function TowTruck() {
         status: "pending",
         photo_url: photoUrl, // Keep for backward compatibility/UI
         photo_path: photoPath,
-        photo_uploaded_at: photoUrl ? new Date().toISOString() : null,
-        created_at: serverTimestamp(),
+        photo_uploaded_at: photoUrl ? new Date().toISOString() : null
       });
 
       // After saving to DB, open WhatsApp

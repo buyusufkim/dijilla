@@ -28,8 +28,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import { collection, query, where, onSnapshot, orderBy, addDoc, deleteDoc, doc } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import { toast } from "sonner";
 
 type Document = {
@@ -61,21 +60,10 @@ export default function Glovebox() {
       return;
     }
 
-    const q = query(
-      collection(db, "documents"),
-      where("user_id", "==", user.uid),
-      orderBy("created_at", "desc")
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot: any) => {
-      const docData = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Document[];
-      setDocuments(docData);
-      setLoading(false);
-    }, (error: any) => {
-      console.error("Error fetching documents:", error);
+    const unsubscribe = db.from("documents").subscribe((data) => {
+      const filtered = data.filter((d: any) => d.user_id === (user.id || user.uid));
+      // Sort by created_at desc if available, or just use default
+      setDocuments(filtered as Document[]);
       setLoading(false);
     });
 
@@ -121,8 +109,8 @@ export default function Glovebox() {
         status = "warning";
       }
 
-      await addDoc(collection(db, "documents"), {
-        user_id: user.uid,
+      await db.from("documents").insert({
+        user_id: user.id || user.uid,
         title: newDoc.title,
         type: newDoc.type,
         expiry_date: newDoc.expiry_date,
@@ -143,7 +131,7 @@ export default function Glovebox() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteDoc(doc(db, "documents", id));
+      await db.from("documents").delete(id);
       toast.success("Belge silindi.");
     } catch (error) {
       console.error("Error deleting document:", error);

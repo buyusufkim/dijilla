@@ -3,8 +3,7 @@ import { useFamily } from "@/context/FamilyContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import { collection, query, where, onSnapshot, doc, getDoc, orderBy } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 
 import { DashboardHeader } from "@/components/home/DashboardHeader";
 import { AlertBanners } from "@/components/home/AlertBanners";
@@ -31,10 +30,10 @@ export default function Home() {
     // Fetch Profile
     const fetchProfile = async () => {
       try {
-        const docRef = doc(db, "profiles", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setProfile(docSnap.data());
+        const { data } = await db.from("profiles").select("*");
+        const userProfile = data?.find((p: any) => p.id === user.id || p.id === user.uid);
+        if (userProfile) {
+          setProfile(userProfile);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -43,38 +42,27 @@ export default function Home() {
     fetchProfile();
 
     // Subscribe to Vehicles
-    const q = query(
-      collection(db, "vehicles"),
-      where("user_id", "==", user.uid),
-      orderBy("created_at", "desc")
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot: any) => {
-      const vehicleData = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setVehicles(vehicleData);
-      setLoadingVehicles(false);
-    }, (error: any) => {
-      console.error("Error fetching vehicles:", error);
+    const unsubscribeVehicles = db.from("vehicles").subscribe((data) => {
+      const filtered = data.filter((v: any) => v.user_id === (user.id || user.uid));
+      // Sort by created_at desc
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setVehicles(filtered);
       setLoadingVehicles(false);
     });
 
     // Subscribe to Maintenance Appointments
-    const maQuery = query(
-      collection(db, "appointments"),
-      where("user_id", "==", user.uid),
-      where("status", "==", "scheduled"),
-      orderBy("appointment_date", "asc")
-    );
-
-    const unsubscribeMA = onSnapshot(maQuery, (snapshot: any) => {
-      setMaintenanceAppointments(snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })));
+    const unsubscribeMA = db.from("appointments").subscribe((data) => {
+      const filtered = data.filter((a: any) => 
+        a.user_id === (user.id || user.uid) && 
+        a.status === "scheduled"
+      );
+      // Sort by appointment_date asc
+      filtered.sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime());
+      setMaintenanceAppointments(filtered);
     });
 
     return () => {
-      unsubscribe();
+      unsubscribeVehicles();
       unsubscribeMA();
     };
   }, [user]);

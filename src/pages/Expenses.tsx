@@ -21,8 +21,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { db } from "@/firebase";
-import { collection, query, where, onSnapshot, addDoc, orderBy, serverTimestamp } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import { useAuth } from "@/context/AuthContext";
 
 type Expense = {
@@ -52,21 +51,11 @@ export default function Expenses() {
       return;
     }
 
-    const q = query(
-      collection(db, "expenses"),
-      where("user_id", "==", user.uid),
-      orderBy("expense_date", "desc")
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot: any) => {
-      const expenseData = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Expense[];
-      setExpenses(expenseData);
-      setLoading(false);
-    }, (error: any) => {
-      console.error("Error fetching expenses:", error);
+    const unsubscribe = db.from("expenses").subscribe((data) => {
+      const filtered = data.filter((e: any) => e.user_id === (user.id || user.uid));
+      // Sort by expense_date desc
+      filtered.sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
+      setExpenses(filtered as Expense[]);
       setLoading(false);
     });
 
@@ -79,13 +68,12 @@ export default function Expenses() {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "expenses"), {
-        user_id: user.uid,
+      await db.from("expenses").insert({
+        user_id: user.id || user.uid,
         title,
         amount: parseFloat(amount),
         category,
-        expense_date: new Date().toISOString(),
-        created_at: serverTimestamp()
+        expense_date: new Date().toISOString()
       });
 
       setShowAddModal(false);

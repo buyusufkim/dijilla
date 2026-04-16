@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  addDoc,
-  serverTimestamp,
-  orderBy,
-} from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import { format } from "date-fns";
 import { aiService } from "@/services/aiService";
 
@@ -57,9 +48,8 @@ export default function Maintenance() {
     if (!user) return;
 
     // Fetch vehicles
-    const vQuery = query(collection(db, "vehicles"), where("user_id", "==", user.uid));
-    const unsubscribeVehicles = onSnapshot(vQuery, (snapshot: any) => {
-      const vList = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as Vehicle[];
+    const unsubscribeVehicles = db.from("vehicles").subscribe((data) => {
+      const vList = data.filter((v: any) => v.user_id === (user.id || user.uid)) as Vehicle[];
       setVehicles(vList);
       if (vList.length > 0 && !selectedVehicle) {
         setSelectedVehicle(vList[0]);
@@ -73,24 +63,19 @@ export default function Maintenance() {
     if (!user || !selectedVehicle) return;
 
     // Fetch records
-    const rQuery = query(
-      collection(db, "maintenance_records"),
-      where("vehicle_id", "==", selectedVehicle.id),
-      orderBy("date", "desc")
-    );
-    const unsubscribeRecords = onSnapshot(rQuery, (snapshot: any) => {
-      setRecords(snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as MaintenanceRecord[]);
+    const unsubscribeRecords = db.from("maintenance_records").subscribe((data) => {
+      const filtered = data.filter((r: any) => r.vehicle_id === selectedVehicle.id);
+      // Sort by date desc
+      filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setRecords(filtered as MaintenanceRecord[]);
     });
 
     // Fetch appointments
-    const aQuery = query(
-      collection(db, "appointments"),
-      where("vehicle_id", "==", selectedVehicle.id),
-      where("status", "==", "scheduled"),
-      orderBy("appointment_date", "asc")
-    );
-    const unsubscribeAppointments = onSnapshot(aQuery, (snapshot: any) => {
-      setAppointments(snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as MaintenanceAppointment[]);
+    const unsubscribeAppointments = db.from("appointments").subscribe((data) => {
+      const filtered = data.filter((a: any) => a.vehicle_id === selectedVehicle.id && a.status === "scheduled");
+      // Sort by appointment_date asc
+      filtered.sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime());
+      setAppointments(filtered as MaintenanceAppointment[]);
     });
 
     // Get AI Recommendations
@@ -129,13 +114,12 @@ export default function Maintenance() {
   const handleAddRecord = async () => {
     if (!user || !selectedVehicle) return;
     try {
-      await addDoc(collection(db, "maintenance_records"), {
+      await db.from("maintenance_records").insert({
         ...recordForm,
-        user_id: user.uid,
+        user_id: user.id || user.uid,
         vehicle_id: selectedVehicle.id,
         mileage: Number(recordForm.mileage),
-        cost: Number(recordForm.cost),
-        created_at: serverTimestamp(),
+        cost: Number(recordForm.cost)
       });
       setIsAddingRecord(false);
       setRecordForm({
@@ -153,12 +137,11 @@ export default function Maintenance() {
   const handleAddAppointment = async () => {
     if (!user || !selectedVehicle) return;
     try {
-      await addDoc(collection(db, "appointments"), {
+      await db.from("appointments").insert({
         ...appointmentForm,
-        user_id: user.uid,
+        user_id: user.id || user.uid,
         vehicle_id: selectedVehicle.id,
-        status: "scheduled",
-        created_at: serverTimestamp(),
+        status: "scheduled"
       });
       setIsAddingAppointment(false);
       setAppointmentForm({

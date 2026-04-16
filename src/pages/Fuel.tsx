@@ -12,8 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import { collection, query, where, onSnapshot } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import L from 'leaflet';
 
 import { Station, getDistanceFromLatLonInKm, DefaultIcon } from "@/components/fuel/types";
@@ -65,9 +64,8 @@ export default function Fuel() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "vehicles"), where("user_id", "==", user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot: any) => {
-      const vData = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as any[];
+    const unsubscribe = db.from("vehicles").subscribe((data) => {
+      const vData = data.filter((v: any) => v.user_id === (user.id || user.uid));
       setVehicles(vData);
       if (vData.length > 0 && !selectedVehicleId) {
         setSelectedVehicleId(vData[0].id);

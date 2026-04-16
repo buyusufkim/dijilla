@@ -8,8 +8,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import { collection, query, where, onSnapshot } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import { aiService } from "@/services/aiService";
 
 import { TravelHeader } from "@/components/travel/TravelHeader";
@@ -77,9 +76,8 @@ export default function TravelAdvisor() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "vehicles"), where("user_id", "==", user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot: any) => {
-      const vData = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as any[];
+    const unsubscribe = db.from("vehicles").subscribe((data) => {
+      const vData = data.filter((v: any) => v.user_id === (user.id || user.uid)) as any[];
       setVehicles(vData);
       if (vData.length > 0 && !selectedVehicle) {
         setSelectedVehicle(vData[0]);

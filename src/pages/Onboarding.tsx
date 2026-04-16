@@ -59,24 +59,9 @@ export default function Onboarding() {
 
     setLoading(false);
     if (result.error) {
-      let errorMessage = result.error.message;
-      if (result.error.code === 'auth/operation-not-allowed') {
-        errorMessage = "E-posta/Şifre girişi Firebase Console'da etkinleştirilmemiş. Lütfen Firebase Console -> Authentication -> Sign-in method bölümünden Email/Password seçeneğini etkinleştirin.";
-      } else if (result.error.code === 'auth/invalid-credential' || result.error.code === 'auth/wrong-password' || result.error.code === 'auth/user-not-found') {
-        errorMessage = "E-posta adresi veya şifre hatalı.";
-      } else if (result.error.code === 'auth/email-already-in-use') {
-        errorMessage = "Bu e-posta adresi zaten kullanımda.";
-      } else if (result.error.code === 'auth/weak-password') {
-        errorMessage = "Şifre çok zayıf. Lütfen daha güçlü bir şifre belirleyin.";
-      }
-      setError(errorMessage);
+      setError(result.error.message || "Bir hata oluştu.");
     } else {
-      if (result.requiresEmailVerification) {
-        setSuccessMessage("Kayıt oluşturuldu. Giriş yapmadan önce e-posta adresini doğrula.");
-        setIsLogin(true);
-      } else {
-        navigate("/home");
-      }
+      navigate("/home");
     }
   };
 

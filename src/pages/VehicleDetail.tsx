@@ -8,8 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
-import { db } from "@/firebase";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc, addDoc, deleteDoc } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import { calculateRisk } from "@/lib/risk-engine";
 
 import { Vehicle, MaintenanceRecord, Appointment, Reminder } from "@/components/vehicle-detail/types";
@@ -44,19 +43,10 @@ export default function VehicleDetail() {
     // Fetch vehicle details
     const fetchVehicle = async () => {
       try {
-        const docRef = doc(db, "vehicles", id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setVehicle({ id: docSnap.id, ...docSnap.data() } as Vehicle);
-        } else {
-          // Fallback to query if getDoc fails in adapter
-          const q = query(collection(db, "vehicles"), where("id", "==", id));
-          const unsubscribe = onSnapshot(q, (snapshot: any) => {
-            if (!snapshot.empty) {
-              setVehicle({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Vehicle);
-            }
-          });
-          return () => unsubscribe();
+        const { data } = await db.from("vehicles").select("*");
+        const v = data?.find((v: any) => v.id === id);
+        if (v) {
+          setVehicle(v as Vehicle);
         }
       } catch (error) {
         console.error("Araç bilgileri alınırken hata:", error);
@@ -66,53 +56,28 @@ export default function VehicleDetail() {
     fetchVehicle();
 
     // Fetch maintenance records
-    const qMaintenance = query(
-      collection(db, "maintenance_records"),
-      where("vehicle_id", "==", id),
-      orderBy("date", "asc")
-    );
-
-    const unsubscribeMaintenance = onSnapshot(qMaintenance, (snapshot: any) => {
-      const records = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      })) as MaintenanceRecord[];
-      setMaintenanceRecords(records);
-      setLoading(false);
-    }, (error: any) => {
-      console.error("Bakım kayıtları alınırken hata:", error);
+    const unsubscribeMaintenance = db.from("maintenance_records").subscribe((data) => {
+      const filtered = data.filter((r: any) => r.vehicle_id === id);
+      // Sort by date asc
+      filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setMaintenanceRecords(filtered as MaintenanceRecord[]);
       setLoading(false);
     });
 
     // Fetch appointments
-    const qAppointments = query(
-      collection(db, "appointments"),
-      where("vehicle_id", "==", id),
-      where("status", "==", "scheduled"),
-      orderBy("appointment_date", "asc")
-    );
-
-    const unsubscribeAppointments = onSnapshot(qAppointments, (snapshot: any) => {
-      const appointmentData = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Appointment[];
-      setAppointments(appointmentData);
+    const unsubscribeAppointments = db.from("appointments").subscribe((data) => {
+      const filtered = data.filter((a: any) => a.vehicle_id === id && a.status === "scheduled");
+      // Sort by appointment_date asc
+      filtered.sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime());
+      setAppointments(filtered as Appointment[]);
     });
 
     // Fetch reminders
-    const qReminders = query(
-      collection(db, "reminders"),
-      where("vehicle_id", "==", id),
-      orderBy("date", "asc")
-    );
-
-    const unsubscribeReminders = onSnapshot(qReminders, (snapshot: any) => {
-      const reminderData = snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Reminder[];
-      setReminders(reminderData);
+    const unsubscribeReminders = db.from("reminders").subscribe((data) => {
+      const filtered = data.filter((r: any) => r.vehicle_id === id);
+      // Sort by date asc
+      filtered.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      setReminders(filtered as Reminder[]);
     });
 
     return () => {
@@ -126,11 +91,11 @@ export default function VehicleDetail() {
     if (!user || !id || !newReminderTitle || !newReminderDate) return;
 
     try {
-      await addDoc(collection(db, "reminders"), {
+      await db.from("reminders").insert({
         title: newReminderTitle,
         date: newReminderDate,
         vehicle_id: id,
-        user_id: user.uid,
+        user_id: user.id || user.uid,
         completed: false,
         created_at: new Date().toISOString()
       });
@@ -151,7 +116,7 @@ export default function VehicleDetail() {
 
   const handleDeleteReminder = async (reminderId: string) => {
     try {
-      await deleteDoc(doc(db, "reminders", reminderId));
+      await db.from("reminders").delete(reminderId);
       addNotification({
         title: "Hatırlatıcı Silindi",
         message: "Hatırlatıcı başarıyla kaldırıldı.",

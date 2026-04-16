@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
-import { db } from "@/firebase";
-import { collection, addDoc, serverTimestamp, query, where, onSnapshot } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import { useAuth } from "@/context/AuthContext";
 
 import { ServiceHeader } from "@/components/services/ServiceHeader";
@@ -28,9 +27,8 @@ export default function Services() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "vehicles"), where("user_id", "==", user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot: any) => {
-      const vData = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+    const unsubscribe = db.from("vehicles").subscribe((data) => {
+      const vData = data.filter((v: any) => v.user_id === (user.id || user.uid));
       setVehicles(vData);
       if (vData.length > 0) {
         setSelectedVehicle(vData[0]);
@@ -76,7 +74,7 @@ export default function Services() {
 
     try {
       const radius = 5000; // 5km
-      const query = `
+      const queryStr = `
         [out:json][timeout:25];
         (
           node["amenity"="${amenity}"](around:${radius},${userLocation.lat},${userLocation.lon});
@@ -90,7 +88,7 @@ export default function Services() {
       `;
       const response = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
-        body: query
+        body: queryStr
       });
 
       if (!response.ok) {
@@ -171,12 +169,11 @@ export default function Services() {
     
     try {
       if (selectedService?.label === "Kaza Tutanağı" && user) {
-        await addDoc(collection(db, "service_requests"), {
-          user_id: user.uid,
+        await db.from("service_requests").insert({
+          user_id: user.id || user.uid,
           type: "accident",
           phone: "Kayıtlı Numara",
-          status: "pending",
-          created_at: serverTimestamp(),
+          status: "pending"
         });
       } else {
         // Simulate API call for other services

@@ -16,8 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/context/NotificationContext";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import { collection, query, where, getDocs, orderBy } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 
 type InsuranceCategory = "vehicle" | "home" | "health";
 
@@ -151,16 +150,8 @@ function AssetSelection({
   const fetchVehicles = async () => {
     if (!user) return;
     try {
-      const q = query(
-        collection(db, "vehicles"),
-        where("user_id", "==", user.uid),
-        orderBy("created_at", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      const vehicleData = querySnapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const { data } = await db.from("vehicles").select("*");
+      const vehicleData = data?.filter((v: any) => v.user_id === (user.id || user.uid)) || [];
       
       // Calculate age for each vehicle
       const currentYear = new Date().getFullYear();

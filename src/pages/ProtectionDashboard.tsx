@@ -20,8 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import { doc, getDoc, collection, query, where, onSnapshot, orderBy } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import { calculateRisk, RiskAnalysis } from "@/lib/risk-engine";
 
 type Vehicle = {
@@ -52,24 +51,20 @@ export default function ProtectionDashboard() {
     if (!user || !id) return;
 
     const fetchVehicle = async () => {
-      const docRef = doc(db, "vehicles", id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setVehicle({ id: docSnap.id, ...docSnap.data() } as Vehicle);
+      const { data } = await db.from("vehicles").select("*");
+      const v = data?.find((v: any) => v.id === id);
+      if (v) {
+        setVehicle(v as Vehicle);
       }
     };
 
     fetchVehicle();
 
-    const qExpenses = query(
-      collection(db, "expenses"),
-      where("vehicle_id", "==", id),
-      orderBy("expense_date", "desc")
-    );
-
-    const unsubscribe = onSnapshot(qExpenses, (snapshot: any) => {
-      const expenseData = snapshot.docs.map((doc: any) => doc.data() as Expense);
-      setExpenses(expenseData);
+    const unsubscribe = db.from("expenses").subscribe((data) => {
+      const filtered = data.filter((e: any) => e.vehicle_id === id);
+      // Sort by expense_date desc
+      filtered.sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
+      setExpenses(filtered as Expense[]);
       setLoading(false);
     });
 

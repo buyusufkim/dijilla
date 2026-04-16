@@ -1,4 +1,4 @@
-import { ref, uploadBytes, getDownloadURL } from "@/firebase";
+import { storage } from './supabase-service';
 
 /**
  * Uploads a file to Supabase Storage.
@@ -8,13 +8,16 @@ import { ref, uploadBytes, getDownloadURL } from "@/firebase";
  */
 export const uploadFile = async (file: Blob | File, path: string) => {
   try {
-    const storageRef = ref(null, path);
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
+    const bucket = 'service_requests';
+    const { data, error } = await storage.upload(bucket, path, file);
+    
+    if (error) throw error;
+
+    const downloadURL = storage.getPublicUrl(bucket, path);
     
     return {
       url: downloadURL,
-      path: snapshot.ref.path,
+      path: data?.path || path,
       metadata: {
         size: (file as any).size || 0,
         contentType: (file as any).type || 'image/jpeg',

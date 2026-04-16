@@ -1,11 +1,11 @@
-import { db, collection, query, where, getDocs, addDoc } from '@/firebase';
+import { db } from '@/lib/supabase-service';
 
 export const seedDemoData = async (userId: string) => {
   try {
     // Check if vehicles already exist
-    const vQuery = query(collection(db, 'vehicles'), where('user_id', '==', userId));
-    const existingVehicles = await getDocs(vQuery);
-    if (!existingVehicles.empty) return; // Already seeded
+    const { data: existingVehicles } = await db.from('vehicles').select('*');
+    const userVehicles = existingVehicles?.filter((v: any) => v.user_id === userId) || [];
+    if (userVehicles.length > 0) return; // Already seeded
 
     // 1. Insert Vehicles
     const vehicleData = [
@@ -35,8 +35,12 @@ export const seedDemoData = async (userId: string) => {
 
     const vehicles: any[] = [];
     for (const v of vehicleData) {
-      const docRef = await addDoc(collection(db, 'vehicles'), v);
-      vehicles.push({ id: docRef.id, ...v });
+      const result = await db.from('vehicles').insert(v);
+      // Since insert doesn't return the object in our mock, we fetch it or just use the data we have
+      // In a real Supabase insert, we'd use .select().single()
+      const { data: allVehicles } = await db.from('vehicles').select('*');
+      const inserted = allVehicles?.find((item: any) => item.plate === v.plate && item.user_id === userId);
+      vehicles.push(inserted || { id: Math.random().toString(), ...v });
     }
 
     const teslaId = vehicles[0].id;
@@ -67,7 +71,7 @@ export const seedDemoData = async (userId: string) => {
     ];
 
     for (const m of maintenanceData) {
-      await addDoc(collection(db, 'maintenance_records'), m);
+      await db.from('maintenance_records').insert(m);
     }
 
     // 3. Insert Appointments
@@ -84,7 +88,7 @@ export const seedDemoData = async (userId: string) => {
     ];
 
     for (const a of appointmentData) {
-      await addDoc(collection(db, 'appointments'), a);
+      await db.from('appointments').insert(a);
     }
 
     // 4. Insert Expenses
@@ -119,7 +123,7 @@ export const seedDemoData = async (userId: string) => {
     ];
 
     for (const e of expenseData) {
-      await addDoc(collection(db, 'expenses'), e);
+      await db.from('expenses').insert(e);
     }
 
     console.log("Demo verileri başarıyla yüklendi!");

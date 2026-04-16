@@ -17,8 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFamily } from "@/context/FamilyContext";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/firebase";
-import { doc, getDoc, updateDoc } from "@/firebase";
+import { db } from "@/lib/supabase-service";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -42,13 +41,12 @@ export default function Profile() {
 
     const fetchProfile = async () => {
       try {
-        const docRef = doc(db, "profiles", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setProfile(data);
-          if (data.notification_settings) {
-            setNotificationSettings(data.notification_settings);
+        const { data } = await db.from("profiles").select("*");
+        const userProfile = data?.find((p: any) => p.id === (user.id || user.uid));
+        if (userProfile) {
+          setProfile(userProfile);
+          if (userProfile.notification_settings) {
+            setNotificationSettings(userProfile.notification_settings);
           }
         }
       } catch (error) {
@@ -71,10 +69,9 @@ export default function Profile() {
     setNotificationSettings(newSettings);
     
     try {
-      const docRef = doc(db, "profiles", user.uid);
-      await updateDoc(docRef, {
+      await db.from("profiles").update({
         notification_settings: newSettings
-      });
+      }, user.id || user.uid);
     } catch (error) {
       console.error("Error updating notification settings:", error);
       // Revert state on error
