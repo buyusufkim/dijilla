@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.js";
 import "./index.css";
+import { Analytics } from '@vercel/analytics/react';
 
 // Suppress benign Vite WebSocket errors in AI Studio environment
 window.addEventListener('unhandledrejection', (event) => {
