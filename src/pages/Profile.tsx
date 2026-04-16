@@ -41,8 +41,15 @@ export default function Profile() {
 
     const fetchProfile = async () => {
       try {
-        const { data } = await db.from("profiles").select("*");
-        const userProfile = data?.find((p: any) => p.id === (user.id || user.uid));
+        const { data, error } = await db.from("profiles").select("*");
+        if (error) {
+          console.error("Error fetching profiles:", error);
+          return;
+        }
+        
+        const userId = user.id || user.uid;
+        const userProfile = (data as any[])?.find((p: any) => p.id === userId);
+        
         if (userProfile) {
           setProfile(userProfile);
           if (userProfile.notification_settings) {
@@ -50,7 +57,7 @@ export default function Profile() {
           }
         }
       } catch (error) {
-        console.error("Error fetching profile:", error);
+        console.error("Error fetching profile catch:", error);
       }
     };
 

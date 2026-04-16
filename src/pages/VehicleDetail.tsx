@@ -43,13 +43,22 @@ export default function VehicleDetail() {
     // Fetch vehicle details
     const fetchVehicle = async () => {
       try {
-        const { data } = await db.from("vehicles").select("*");
-        const v = data?.find((v: any) => v.id === id);
+        const { data, error } = await db.from("vehicles").select("*");
+        if (error) {
+          console.error("Araç bilgileri alınırken DB hatası:", error);
+          setLoading(false);
+          return;
+        }
+
+        const v = (data as any[])?.find((v: any) => v.id === id);
         if (v) {
           setVehicle(v as Vehicle);
+        } else {
+          setLoading(false);
         }
       } catch (error) {
-        console.error("Araç bilgileri alınırken hata:", error);
+        console.error("Araç bilgileri alınırken catch hatası:", error);
+        setLoading(false);
       }
     };
 

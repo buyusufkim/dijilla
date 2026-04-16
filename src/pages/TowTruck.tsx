@@ -73,15 +73,21 @@ export default function TowTruck() {
   const fetchVehicles = async () => {
     if (!user) return;
     try {
-      const { data } = await db.from("vehicles").select("*");
-      const vehicleData = data?.filter((v: any) => v.user_id === (user.id || user.uid)) || [];
+      const { data, error } = await db.from("vehicles").select("*");
+      if (error) {
+        console.error('Error fetching vehicles DB:', error);
+        setLoading(false);
+        return;
+      }
+      
+      const vehicleData = (data as any[] || []).filter((v: any) => v.user_id === (user.id || user.uid));
       
       setVehicles(vehicleData);
       if (vehicleData.length > 0) {
         setPlate(vehicleData[0].plate);
       }
     } catch (error) {
-      console.error('Error fetching vehicles:', error);
+      console.error('Error fetching vehicles catch:', error);
     } finally {
       setLoading(false);
     }

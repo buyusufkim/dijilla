@@ -51,10 +51,23 @@ export default function ProtectionDashboard() {
     if (!user || !id) return;
 
     const fetchVehicle = async () => {
-      const { data } = await db.from("vehicles").select("*");
-      const v = data?.find((v: any) => v.id === id);
-      if (v) {
-        setVehicle(v as Vehicle);
+      try {
+        const { data, error } = await db.from("vehicles").select("*");
+        if (error) {
+          console.error("Error fetching vehicles:", error);
+          setLoading(false);
+          return;
+        }
+
+        const v = (data as any[])?.find((v: any) => v.id === id);
+        if (v) {
+          setVehicle(v as Vehicle);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Fetch vehicle error:", err);
+        setLoading(false);
       }
     };
 
