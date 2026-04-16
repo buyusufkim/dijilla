@@ -14,7 +14,8 @@ function getGenAI() {
     }
 
     const apiKey = rawKey.trim().replace(/^["']|["']$/g, "");
-    genAI = new GoogleGenAI({ apiKey });
+    // DÜZELTME: Nesne değil, doğrudan string gönderiyoruz
+    genAI = new GoogleGenAI(apiKey);
   }
 
   return genAI;
@@ -27,53 +28,50 @@ router.post("/generate", async (req: Request, res: Response) => {
     if (!prompt && !contents) {
       return res.status(400).json({
         success: false,
-        error: { message: "Prompt or contents are required." },
+        error: { message: "Prompt veya içerik gerekli." },
       });
     }
 
     const ai = getGenAI();
-    // Sadece senin izin verdiğin ucuz/hızlı modeller çalıştırılabilir.
-    // Dışarıdan pahalı model talep edilirse reddedilir.
+    
     const allowedModels = [
       "gemini-1.5-flash-8b", 
       "gemini-1.5-flash", 
       "gemini-3-flash-preview"
     ];
     
-    // Sunucudaki .env dosyasından varsayılan modeli al, yoksa flash-8b (en ucuzu) kullan
     const defaultModel = process.env.GEMINI_MODEL || "gemini-1.5-flash-8b";
-    
-    // Frontend'den gelen model bizim beyaz listemizde yoksa varsayılanı kullan
-    const modelName = allowedModels.includes(requestedModel) 
-      ? requestedModel 
-      : defaultModel;
+    const modelName = allowedModels.includes(requestedModel) ? requestedModel : defaultModel;
 
-      
     let finalContents = contents;
     if (!finalContents && prompt) {
       finalContents = [{ role: "user", parts: [{ text: prompt }] }];
     }
 
-    // Eski hatalı olabilecek blok yerine bunu yapıştır:
+    // Modeli alıyoruz
     const model = ai.getGenerativeModel({ 
-      model: modelName,
-      systemInstruction: systemInstruction || config?.systemInstruction 
+      model: modelName 
     });
 
-    const response = await model.generateContent({
+    // Sistem talimatı varsa ekliyoruz
+    if (systemInstruction) {
+      model.systemInstruction = { parts: [{ text: systemInstruction }], role: "system" };
+    }
+
+    // SIRALAMA DÜZELTİLDİ: Önce üretiyoruz, sonra cevabı alıyoruz
+    const result = await model.generateContent({
       contents: finalContents,
-      generationConfig: config // config objesini buraya paslıyoruz
+      generationConfig: config
     });
 
-    // Yanıtı alma kısmını da kütüphaneye uygun güncelleyelim:
-    const result = await response.response;
-    const text = result.text();
+    const response = await result.response;
+    const text = response.text();
 
     return res.json({
       success: true,
       data: {
         text: text,
-        groundingMetadata: result.candidates?.[0]?.groundingMetadata,
+        groundingMetadata: response.candidates?.[0]?.groundingMetadata,
       },
     });
   } catch (error: any) {
@@ -82,7 +80,7 @@ router.post("/generate", async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       error: {
-        message: error?.message || "Failed to generate AI content.",
+        message: error?.message || "AI içeriği oluşturulamadı.",
       },
     });
   }
