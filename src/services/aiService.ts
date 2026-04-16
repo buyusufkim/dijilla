@@ -57,7 +57,6 @@ export const aiService = {
           },
           required: ["distance", "totalKm", "duration", "trafficStatus", "fuelStatus", "estimatedCost", "averageFuelConsumption", "stops"]
         },
-        tools: [{ googleSearch: {} }],
       },
     });
   },
