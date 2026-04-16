@@ -1,10 +1,9 @@
 import { Router, Request, Response } from "express";
-// DİKKAT: GoogleGenerativeAI sınıfını import ediyoruz, GoogleGenAI değil!
-import { GoogleGenerativeAI } from "@google/genai";
+// DİKKAT: Artık resmi kütüphaneden doğru sınıfı çağırıyoruz
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const router = Router();
 
-// Singleton yapısı
 let genAI: GoogleGenerativeAI | null = null;
 
 function getGenAI(): GoogleGenerativeAI {
@@ -13,10 +12,9 @@ function getGenAI(): GoogleGenerativeAI {
     if (!rawKey) {
       throw new Error("GEMINI_SV_KEY sunucuda yapılandırılmamış.");
     }
-
     const apiKey = rawKey.trim().replace(/^["']|["']$/g, "");
     
-    // Versiyon 1.x'te constructor doğrudan string alır
+    // Resmi SDK'da doğrudan string gönderilir
     genAI = new GoogleGenerativeAI(apiKey);
   }
   return genAI;
@@ -29,13 +27,13 @@ router.post("/generate", async (req: Request, res: Response) => {
     if (!prompt && !contents) {
       return res.status(400).json({
         success: false,
-        error: { message: "Prompt veya içerik gerekli." },
+        error: { message: "İçerik gerekli." },
       });
     }
 
     const ai = getGenAI();
     
-    // Model Beyaz Listesi (Bütçeni koruyoruz)
+    // Ucuz modeller listesi
     const allowedModels = [
       "gemini-1.5-flash-8b", 
       "gemini-1.5-flash", 
@@ -44,10 +42,9 @@ router.post("/generate", async (req: Request, res: Response) => {
     const defaultModel = process.env.GEMINI_MODEL || "gemini-1.5-flash-8b";
     const modelName = allowedModels.includes(requestedModel) ? requestedModel : defaultModel;
 
-    // Doğru metod: getGenerativeModel
+    // Modeli yapılandırma
     const model = ai.getGenerativeModel({ 
       model: modelName,
-      // Sistem talimatını burada veriyoruz
       systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction }], role: "system" } : undefined
     });
 
@@ -56,7 +53,7 @@ router.post("/generate", async (req: Request, res: Response) => {
       finalContents = [{ role: "user", parts: [{ text: prompt }] }];
     }
 
-    // Üretim aşaması
+    // Üretim
     const result = await model.generateContent({
       contents: finalContents,
       generationConfig: config
@@ -73,10 +70,10 @@ router.post("/generate", async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("[AI Rota Hatası]", error?.message || error);
+    console.error("[AI Hatası]", error?.message || error);
     return res.status(500).json({
       success: false,
-      error: { message: error?.message || "AI yanıtı oluşturulurken hata oluştu." },
+      error: { message: "Yapay zeka yanıtı alınamadı." },
     });
   }
 });
