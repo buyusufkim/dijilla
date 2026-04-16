@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { GoogleGenerativeAI } from "@google/generative-ai"; // Doğru kütüphane bu!
+import { GoogleGenerativeAI } from "@google/genAI"; // Doğru kütüphane bu!
 
 const router = Router();
 let genAI: GoogleGenerativeAI | null = null;
