@@ -104,7 +104,7 @@ export default function VehicleDetail() {
         title: newReminderTitle,
         date: newReminderDate,
         vehicle_id: id,
-        user_id: user.id || user.uid,
+        user_id: user.id,
         completed: false,
         created_at: new Date().toISOString()
       });

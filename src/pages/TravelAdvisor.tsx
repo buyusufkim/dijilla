@@ -77,7 +77,7 @@ export default function TravelAdvisor() {
   useEffect(() => {
     if (!user) return;
     const unsubscribe = db.from("vehicles").subscribe((data) => {
-      const vData = data.filter((v: any) => v.user_id === (user.id || user.uid)) as any[];
+      const vData = data.filter((v: any) => v.user_id === user.id) as any[];
       setVehicles(vData);
       if (vData.length > 0 && !selectedVehicle) {
         setSelectedVehicle(vData[0]);

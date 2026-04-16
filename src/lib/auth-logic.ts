@@ -11,7 +11,7 @@ export const handleProfileCreation = async (user: any, fullName: string, email: 
 
   try {
     await db.from('profiles').upsert({
-      id: user.id || user.uid,
+      id: user.id,
       full_name: fullName,
       email: email,
       points: 0,

@@ -75,18 +75,18 @@ export default function InsurancePurchase() {
   }, [id]);
 
   const getAuthHeaders = useCallback(async () => {
-    let token = user?.id || user?.uid;
-    
     const { data } = await auth.getSession();
-    if (data.session?.access_token) {
-      token = data.session.access_token;
+    const token = data.session?.access_token;
+    
+    if (!token) {
+      throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
     }
 
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     };
-  }, [user]);
+  }, []);
 
   const requestQuotes = async () => {
     setLoading(true);
@@ -206,7 +206,7 @@ export default function InsurancePurchase() {
           expiryMonth: "12",
           expiryYear: "26",
           cvv: "123",
-          holderName: user?.displayName || "Test User"
+          holderName: user?.user_metadata?.full_name || "Test Kullanıcı"
         })
       });
       
@@ -469,7 +469,7 @@ export default function InsurancePurchase() {
                     <input 
                       type="text" 
                       readOnly
-                      defaultValue={user?.displayName || "Test Kullanıcı"}
+                      defaultValue={user?.user_metadata?.full_name || "Test Kullanıcı"}
                       className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-not-allowed outline-none transition-colors"
                     />
                   </div>

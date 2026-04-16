@@ -28,7 +28,7 @@ export default function Services() {
   useEffect(() => {
     if (!user) return;
     const unsubscribe = db.from("vehicles").subscribe((data) => {
-      const vData = data.filter((v: any) => v.user_id === (user.id || user.uid));
+      const vData = data.filter((v: any) => v.user_id === user.id);
       setVehicles(vData);
       if (vData.length > 0) {
         setSelectedVehicle(vData[0]);
@@ -170,7 +170,7 @@ export default function Services() {
     try {
       if (selectedService?.label === "Kaza Tutanağı" && user) {
         await db.from("service_requests").insert({
-          user_id: user.id || user.uid,
+          user_id: user.id,
           type: "accident",
           phone: "Kayıtlı Numara",
           status: "pending"

@@ -31,7 +31,7 @@ export default function Home() {
     const fetchProfile = async () => {
       try {
         const { data } = await db.from("profiles").select("*");
-        const userProfile = data?.find((p: any) => p.id === user.id || p.id === user.uid);
+        const userProfile = data?.find((p: any) => p.id === user.id);
         if (userProfile) {
           setProfile(userProfile);
         }
@@ -43,7 +43,7 @@ export default function Home() {
 
     // Subscribe to Vehicles
     const unsubscribeVehicles = db.from("vehicles").subscribe((data) => {
-      const filtered = data.filter((v: any) => v.user_id === (user.id || user.uid));
+      const filtered = data.filter((v: any) => v.user_id === user.id);
       // Sort by created_at desc
       filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setVehicles(filtered);
@@ -53,7 +53,7 @@ export default function Home() {
     // Subscribe to Maintenance Appointments
     const unsubscribeMA = db.from("appointments").subscribe((data) => {
       const filtered = data.filter((a: any) => 
-        a.user_id === (user.id || user.uid) && 
+        a.user_id === user.id && 
         a.status === "scheduled"
       );
       // Sort by appointment_date asc
@@ -84,7 +84,7 @@ export default function Home() {
   const displayName = familyLoading
     ? "Yükleniyor..."
     : profile?.full_name?.split(" ")[0] ||
-      user?.displayName?.split(" ")[0] ||
+      user?.user_metadata?.full_name?.split(" ")[0] ||
       user?.email?.split("@")[0] ||
       activeMember?.name?.split(" ")[0] ||
       "Sürücü";

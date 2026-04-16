@@ -49,7 +49,7 @@ export default function Maintenance() {
 
     // Fetch vehicles
     const unsubscribeVehicles = db.from("vehicles").subscribe((data) => {
-      const vList = data.filter((v: any) => v.user_id === (user.id || user.uid)) as Vehicle[];
+      const vList = data.filter((v: any) => v.user_id === user.id) as Vehicle[];
       setVehicles(vList);
       if (vList.length > 0 && !selectedVehicle) {
         setSelectedVehicle(vList[0]);
@@ -116,7 +116,7 @@ export default function Maintenance() {
     try {
       await db.from("maintenance_records").insert({
         ...recordForm,
-        user_id: user.id || user.uid,
+        user_id: user.id,
         vehicle_id: selectedVehicle.id,
         mileage: Number(recordForm.mileage),
         cost: Number(recordForm.cost)
@@ -139,7 +139,7 @@ export default function Maintenance() {
     try {
       await db.from("appointments").insert({
         ...appointmentForm,
-        user_id: user.id || user.uid,
+        user_id: user.id,
         vehicle_id: selectedVehicle.id,
         status: "scheduled"
       });

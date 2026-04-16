@@ -65,7 +65,7 @@ export default function Fuel() {
   useEffect(() => {
     if (!user) return;
     const unsubscribe = db.from("vehicles").subscribe((data) => {
-      const vData = data.filter((v: any) => v.user_id === (user.id || user.uid));
+      const vData = data.filter((v: any) => v.user_id === user.id);
       setVehicles(vData);
       if (vData.length > 0 && !selectedVehicleId) {
         setSelectedVehicleId(vData[0].id);

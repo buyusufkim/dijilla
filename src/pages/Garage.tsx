@@ -42,18 +42,18 @@ export default function Garage() {
     }
 
     const unsubscribeVehicles = db.from("vehicles").subscribe((data) => {
-      const filtered = data.filter((v: any) => v.user_id === (user.id || user.uid));
+      const filtered = data.filter((v: any) => v.user_id === user.id);
       setVehicles(filtered as Vehicle[]);
       setLoading(false);
     });
 
     const unsubscribeHomes = db.from("homes").subscribe((data) => {
-      const filtered = data.filter((h: any) => h.user_id === (user.id || user.uid));
+      const filtered = data.filter((h: any) => h.user_id === user.id);
       setHomes(filtered as HomeAsset[]);
     });
 
     const unsubscribeMaintenance = db.from("maintenance_records").subscribe((data) => {
-      const filtered = data.filter((m: any) => m.user_id === (user.id || user.uid));
+      const filtered = data.filter((m: any) => m.user_id === user.id);
       setMaintenanceRecords(filtered);
     });
 
@@ -72,7 +72,7 @@ export default function Garage() {
       setIsSubmitting(true);
       try {
         await db.from("vehicles").insert({
-          user_id: user.id || user.uid,
+          user_id: user.id,
           plate: assetName,
           brand_model: `${brand} ${model}`,
           year: Number(year),
@@ -110,7 +110,7 @@ export default function Garage() {
       setIsSubmitting(true);
       try {
         await db.from("homes").insert({
-          user_id: user.id || user.uid,
+          user_id: user.id,
           name: assetName,
           address: assetDetail
         });

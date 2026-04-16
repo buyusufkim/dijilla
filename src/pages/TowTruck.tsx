@@ -80,7 +80,7 @@ export default function TowTruck() {
         return;
       }
       
-      const vehicleData = (data as any[] || []).filter((v: any) => v.user_id === (user.id || user.uid));
+      const vehicleData = (data as any[] || []).filter((v: any) => v.user_id === user.id);
       
       setVehicles(vehicleData);
       if (vehicleData.length > 0) {
@@ -124,8 +124,8 @@ export default function TowTruck() {
         // 2. Convert to Blob
         const blob = base64ToBlob(compressedBase64);
         // 3. Upload to Storage
-        const fileName = `tow_${user.id || user.uid}_${Date.now()}.jpg`;
-        const storagePath = `service_requests/tow/${user.id || user.uid}/${fileName}`;
+        const fileName = `tow_${user.id}_${Date.now()}.jpg`;
+        const storagePath = `service_requests/tow/${user.id}/${fileName}`;
         const uploadResult = await uploadFile(blob, storagePath);
         
         photoUrl = uploadResult.url;
@@ -133,7 +133,7 @@ export default function TowTruck() {
       }
 
       await db.from("service_requests").insert({
-        user_id: user.id || user.uid,
+        user_id: user.id,
         type: "tow",
         plate: plate,
         phone: phone,

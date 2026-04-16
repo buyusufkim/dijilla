@@ -52,7 +52,7 @@ export default function Expenses() {
     }
 
     const unsubscribe = db.from("expenses").subscribe((data) => {
-      const filtered = data.filter((e: any) => e.user_id === (user.id || user.uid));
+      const filtered = data.filter((e: any) => e.user_id === user.id);
       // Sort by expense_date desc
       filtered.sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
       setExpenses(filtered as Expense[]);
@@ -69,7 +69,7 @@ export default function Expenses() {
     setIsSubmitting(true);
     try {
       await db.from("expenses").insert({
-        user_id: user.id || user.uid,
+        user_id: user.id,
         title,
         amount: parseFloat(amount),
         category,

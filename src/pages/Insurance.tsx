@@ -151,7 +151,7 @@ function AssetSelection({
     if (!user) return;
     try {
       const { data } = await db.from("vehicles").select("*");
-      const vehicleData = data?.filter((v: any) => v.user_id === (user.id || user.uid)) || [];
+      const vehicleData = data?.filter((v: any) => v.user_id === user.id) || [];
       
       // Calculate age for each vehicle
       const currentYear = new Date().getFullYear();

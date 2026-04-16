@@ -61,7 +61,7 @@ export default function Glovebox() {
     }
 
     const unsubscribe = db.from("documents").subscribe((data) => {
-      const filtered = data.filter((d: any) => d.user_id === (user.id || user.uid));
+      const filtered = data.filter((d: any) => d.user_id === user.id);
       // Sort by created_at desc if available, or just use default
       setDocuments(filtered as Document[]);
       setLoading(false);
@@ -110,7 +110,7 @@ export default function Glovebox() {
       }
 
       await db.from("documents").insert({
-        user_id: user.id || user.uid,
+        user_id: user.id,
         title: newDoc.title,
         type: newDoc.type,
         expiry_date: newDoc.expiry_date,

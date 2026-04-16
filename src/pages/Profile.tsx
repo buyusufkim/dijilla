@@ -47,7 +47,7 @@ export default function Profile() {
           return;
         }
         
-        const userId = user.id || user.uid;
+        const userId = user.id;
         const userProfile = (data as any[])?.find((p: any) => p.id === userId);
         
         if (userProfile) {
@@ -78,7 +78,7 @@ export default function Profile() {
     try {
       await db.from("profiles").update({
         notification_settings: newSettings
-      }, user.id || user.uid);
+      }, user.id);
     } catch (error) {
       console.error("Error updating notification settings:", error);
       // Revert state on error
@@ -123,7 +123,7 @@ export default function Profile() {
     navigate("/");
   };
 
-  const displayName = profile?.full_name || user?.displayName || user?.email?.split("@")[0];
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0];
 
   return (
     <div className="flex flex-col gap-8 pb-12 relative w-full overflow-x-hidden">
