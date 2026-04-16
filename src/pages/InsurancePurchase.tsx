@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -23,6 +23,20 @@ import { useAuth } from "@/context/AuthContext";
 import { db, auth } from "@/lib/supabase-service";
 
 type Step = 'FORM' | 'OFFER' | 'COMPARISON' | 'QUICK_BUY' | 'CONFIRMATION';
+
+type PaymentFormState = {
+  holderName: string;
+  cardNumber: string;
+  expiryMonth: string;
+  expiryYear: string;
+  cvv: string;
+};
+
+const digitsOnly = (value: string) => value.replace(/\D/g, '');
+const formatCardNumber = (value: string) => digitsOnly(value).slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+const formatExpiryMonth = (value: string) => digitsOnly(value).slice(0, 2);
+const formatExpiryYear = (value: string) => digitsOnly(value).slice(0, 2);
+const formatCvv = (value: string) => digitsOnly(value).slice(0, 4);
 
 interface Offer {
   id: string;
@@ -63,6 +77,13 @@ export default function InsurancePurchase() {
   const [status, setStatus] = useState<string>('pending');
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
+  const [paymentForm, setPaymentForm] = useState<PaymentFormState>({
+    holderName: '',
+    cardNumber: '',
+    expiryMonth: '',
+    expiryYear: '',
+    cvv: ''
+  });
 
   useEffect(() => {
     if (!id) return;
@@ -73,6 +94,30 @@ export default function InsurancePurchase() {
     };
     fetchVehicle();
   }, [id]);
+
+  useEffect(() => {
+    setPaymentForm((prev) => ({
+      ...prev,
+      holderName: prev.holderName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || ''
+    }));
+  }, [user]);
+
+  const isDemoCheckout = useMemo(() => Boolean(selectedOffer?.isDemo), [selectedOffer?.isDemo]);
+
+  const paymentValidationError = useMemo(() => {
+    if (!paymentForm.holderName.trim()) return 'Kart sahibi adı zorunludur.';
+    if (digitsOnly(paymentForm.cardNumber).length !== 16) return 'Kart numarası 16 haneli olmalıdır.';
+    if (paymentForm.expiryMonth.length !== 2) return 'Son kullanma ayı 2 haneli olmalıdır.';
+    const month = Number(paymentForm.expiryMonth);
+    if (month < 1 || month > 12) return 'Geçerli bir ay girin.';
+    if (paymentForm.expiryYear.length !== 2) return 'Son kullanma yılı 2 haneli olmalıdır.';
+    if (paymentForm.cvv.length < 3 || paymentForm.cvv.length > 4) return 'CVV 3 veya 4 haneli olmalıdır.';
+    return null;
+  }, [paymentForm]);
+
+  const updatePaymentForm = <K extends keyof PaymentFormState>(key: K, value: PaymentFormState[K]) => {
+    setPaymentForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const getAuthHeaders = useCallback(async () => {
     const { data } = await auth.getSession();
@@ -116,7 +161,7 @@ export default function InsurancePurchase() {
 
   const startPolling = async (reqId: string) => {
     let attempts = 0;
-    const maxAttempts = 15; // Increased attempts for better coverage
+    const maxAttempts = 15;
     
     const poll = async () => {
       try {
@@ -131,12 +176,10 @@ export default function InsurancePurchase() {
         
         setStatus(apiStatus);
 
-        // Update offers if we have any
         if (normalizedOffers.length > 0) {
           setOffers(normalizedOffers);
         }
 
-        // Check if we should stop polling
         const isFinalStatus = ['completed', 'partial', 'failed'].includes(apiStatus);
         
         if (isFinalStatus) {
@@ -151,7 +194,6 @@ export default function InsurancePurchase() {
         if (attempts < maxAttempts) {
           setTimeout(poll, 2000);
         } else {
-          // Timeout reached, but we might have partial results
           if (normalizedOffers.length === 0) {
             setError("Teklif alma işlemi zaman aşımına uğradı. Lütfen tekrar deneyin.");
           }
@@ -194,6 +236,11 @@ export default function InsurancePurchase() {
 
   const processPayment = async () => {
     if (!checkoutId) return;
+    if (paymentValidationError) {
+      setError(paymentValidationError);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -202,11 +249,11 @@ export default function InsurancePurchase() {
         method: 'POST',
         headers,
         body: JSON.stringify({
-          cardNumber: "4242424242424242",
-          expiryMonth: "12",
-          expiryYear: "26",
-          cvv: "123",
-          holderName: user?.user_metadata?.full_name || "Test Kullanıcı"
+          cardNumber: digitsOnly(paymentForm.cardNumber),
+          expiryMonth: paymentForm.expiryMonth,
+          expiryYear: paymentForm.expiryYear,
+          cvv: paymentForm.cvv,
+          holderName: paymentForm.holderName.trim()
         })
       });
       
@@ -443,12 +490,12 @@ export default function InsurancePurchase() {
             className="space-y-6"
           >
             <div className="text-center space-y-2">
-              <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 px-3 py-1 rounded-full mb-2">
-                <AlertCircle className="w-3 h-3 text-yellow-500" />
-                <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest">Demo Ödeme Modu</span>
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full mb-2 border ${isDemoCheckout ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-[#00E5FF]/10 border-[#00E5FF]/30'}`}>
+                <AlertCircle className={`w-3 h-3 ${isDemoCheckout ? 'text-yellow-500' : 'text-[#00E5FF]'}`} />
+                <span className={`text-[10px] font-bold uppercase tracking-widest ${isDemoCheckout ? 'text-yellow-500' : 'text-[#00E5FF]'}`}>{isDemoCheckout ? 'Demo Ödeme Simülasyonu' : 'Test Ödeme Formu'}</span>
               </div>
               <h2 className="text-3xl font-black tracking-tighter">Güvenli Ödeme</h2>
-              <p className="text-white/40 text-sm">Bu bir simülasyondur, gerçek tahsilat yapılmaz.</p>
+              <p className="text-white/40 text-sm">{isDemoCheckout ? 'Bu teklif demo akışıdır. Girilen kart verileri yalnızca simülasyon için kullanılır, gerçek tahsilat yapılmaz.' : 'Test ortamındasınız. Kart bilgileri yalnızca ödeme akışını doğrulamak için kullanılır.'}</p>
             </div>
 
             <Card className="bg-[#0A0A0A] border-white/5 rounded-3xl p-6 space-y-6">
@@ -467,55 +514,83 @@ export default function InsurancePurchase() {
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Kart Sahibi</label>
                     <input 
-                      type="text" 
-                      readOnly
-                      defaultValue={user?.user_metadata?.full_name || "Test Kullanıcı"}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-not-allowed outline-none transition-colors"
+                      type="text"
+                      value={paymentForm.holderName}
+                      onChange={(event) => updatePaymentForm('holderName', event.target.value)}
+                      placeholder="Kart üstündeki isim"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none transition-colors focus:border-[#00E5FF]"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Kart Numarası</label>
                     <div className="relative">
                       <input 
-                        type="text" 
-                        readOnly
-                        defaultValue="4242 4242 4242 4242"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-not-allowed outline-none transition-colors font-mono"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="cc-number"
+                        value={paymentForm.cardNumber}
+                        onChange={(event) => updatePaymentForm('cardNumber', formatCardNumber(event.target.value))}
+                        placeholder="0000 0000 0000 0000"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pr-12 text-sm outline-none transition-colors focus:border-[#00E5FF] font-mono"
                       />
                       <CreditCard className="w-5 h-5 text-white/20 absolute right-4 top-1/2 -translate-y-1/2" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">SKT</label>
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Ay</label>
                       <input 
-                        type="text" 
-                        readOnly
-                        defaultValue="12/26"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-not-allowed outline-none transition-colors font-mono"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="cc-exp-month"
+                        value={paymentForm.expiryMonth}
+                        onChange={(event) => updatePaymentForm('expiryMonth', formatExpiryMonth(event.target.value))}
+                        placeholder="12"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none transition-colors focus:border-[#00E5FF] font-mono"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Yıl</label>
+                      <input 
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="cc-exp-year"
+                        value={paymentForm.expiryYear}
+                        onChange={(event) => updatePaymentForm('expiryYear', formatExpiryYear(event.target.value))}
+                        placeholder="26"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none transition-colors focus:border-[#00E5FF] font-mono"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">CVV</label>
                       <input 
-                        type="text" 
-                        readOnly
-                        defaultValue="123"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white/40 cursor-not-allowed outline-none transition-colors font-mono"
+                        type="password"
+                        inputMode="numeric"
+                        autoComplete="cc-csc"
+                        value={paymentForm.cvv}
+                        onChange={(event) => updatePaymentForm('cvv', formatCvv(event.target.value))}
+                        placeholder="123"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm outline-none transition-colors focus:border-[#00E5FF] font-mono"
                       />
                     </div>
                   </div>
                 </div>
+
+                {paymentValidationError && (
+                  <div className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 p-3 rounded-xl">
+                    {paymentValidationError}
+                  </div>
+                )}
                 
                 <div className="flex items-center gap-2 text-[10px] text-white/40 bg-white/5 p-3 rounded-xl border border-white/5">
                   <Lock className="w-3 h-3" />
-                  <span>Test ortamındasınız. Herhangi bir kart bilgisi ile ilerleyebilirsiniz.</span>
+                  <span>{isDemoCheckout ? 'Demo teklif için ödeme simülasyonu yapılır. Gerçek tahsilat ve gerçek poliçe üretimi yoktur.' : 'Bu ekran test ortamıdır. Gönderilen kart verileri canlı tahsilat yapmaz.'}</span>
                 </div>
               </div>
             </Card>
 
-            <Button onClick={processPayment} disabled={loading} className="w-full h-16 bg-[#00E676] text-black hover:bg-[#00E676]/90 rounded-2xl text-lg font-bold shadow-2xl shadow-[#00E676]/20">
-              {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'Demo Ödemeyi Tamamla'}
+            <Button onClick={processPayment} disabled={loading || Boolean(paymentValidationError)} className="w-full h-16 bg-[#00E676] text-black hover:bg-[#00E676]/90 rounded-2xl text-lg font-bold shadow-2xl shadow-[#00E676]/20 disabled:opacity-50">
+              {loading ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : isDemoCheckout ? 'Demo Ödemeyi Tamamla' : 'Ödeme Testini Tamamla'}
             </Button>
             <p className="text-[10px] text-white/20 text-center">
               * "Demo Ödemeyi Tamamla" butonuna basarak ödeme simülasyonunu onaylamış olursunuz.
