@@ -4,6 +4,7 @@
  */
 
 import { BrowserRouter } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "./context/AuthContext.js";
 import { FamilyProvider } from "./context/FamilyContext.js";
 import { NotificationProvider } from "./context/NotificationContext.js";
@@ -17,6 +18,7 @@ export default function App() {
           <BrowserRouter>
             <AppRoutes />
           </BrowserRouter>
+          <Analytics />
         </NotificationProvider>
       </FamilyProvider>
     </AuthProvider>
