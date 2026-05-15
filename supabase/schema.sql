@@ -9,6 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     full_name TEXT,
+    email TEXT,
     role TEXT DEFAULT 'user',
     avatar_url TEXT,
     points INTEGER DEFAULT 0,
@@ -26,13 +27,18 @@ CREATE POLICY "Kullanıcılar kendi profillerini güncelleyebilir"
 
 -- Yeni kullanıcı kayıt olduğunda otomatik profil oluşturma tetikleyicisi
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, avatar_url)
-  VALUES (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url');
+  INSERT INTO public.profiles (id, full_name, email, avatar_url)
+  VALUES (
+    new.id, 
+    new.raw_user_meta_data->>'full_name', 
+    new.email,
+    new.raw_user_meta_data->>'avatar_url'
+  );
   RETURN new;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
@@ -207,3 +213,74 @@ CREATE POLICY "Users can view own checkouts" ON checkouts FOR SELECT USING (auth
 CREATE POLICY "Users can insert own checkouts" ON checkouts FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can view own policies" ON policies FOR SELECT USING (auth.uid() = user_id);
+
+
+-- 8. HOMES TABLE (Konutlar)
+CREATE TABLE IF NOT EXISTS homes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE homes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Kullanıcılar kendi konutlarını görebilir" ON homes FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar konut ekleyebilir" ON homes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar kendi konutlarını silebilir" ON homes FOR DELETE USING (auth.uid() = user_id);
+
+
+-- 9. MAINTENANCE RECORDS TABLE (Bakım Kayıtları)
+CREATE TABLE IF NOT EXISTS maintenance_records (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE NOT NULL,
+    service_type TEXT NOT NULL,
+    date DATE NOT NULL,
+    mileage INTEGER,
+    cost NUMERIC(12, 2),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE maintenance_records ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Kullanıcılar kendi bakım kayıtlarını görebilir" ON maintenance_records FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar bakım kaydı ekleyebilir" ON maintenance_records FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar kendi bakım kayıtlarını silebilir" ON maintenance_records FOR DELETE USING (auth.uid() = user_id);
+
+
+-- 10. APPOINTMENTS TABLE (Randevular)
+CREATE TABLE IF NOT EXISTS appointments (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE NOT NULL,
+    service_type TEXT NOT NULL,
+    appointment_date TIMESTAMPTZ NOT NULL,
+    location TEXT,
+    status TEXT DEFAULT 'scheduled',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Kullanıcılar kendi randevularını görebilir" ON appointments FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar randevu oluşturabilir" ON appointments FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar kendi randevularını güncelleyebilir" ON appointments FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar kendi randevularını silebilir" ON appointments FOR DELETE USING (auth.uid() = user_id);
+
+
+-- 11. REMINDERS TABLE (Özel Hatırlatıcılar)
+CREATE TABLE IF NOT EXISTS reminders (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL DEFAULT auth.uid(),
+    vehicle_id UUID REFERENCES vehicles(id) ON DELETE CASCADE NOT NULL,
+    title TEXT NOT NULL,
+    date DATE NOT NULL,
+    completed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE reminders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Kullanıcılar kendi hatırlatıcılarını görebilir" ON reminders FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar hatırlatıcı ekleyebilir" ON reminders FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar kendi hatırlatıcılarını güncelleyebilir" ON reminders FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Kullanıcılar kendi hatırlatıcılarını silebilir" ON reminders FOR DELETE USING (auth.uid() = user_id);

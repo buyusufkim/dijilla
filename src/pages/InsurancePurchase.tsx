@@ -15,7 +15,8 @@ import {
   Clock,
   CheckCircle2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,16 +51,16 @@ interface Offer {
   packageName: string;
 }
 
-const mapOfferFromApi = (raw: any): Offer => ({
-  id: raw.id || '',
-  providerName: raw.providerName || raw.provider_name || 'Bilinmeyen Sağlayıcı',
+const mapOfferFromApi = (raw: Record<string, any>): Offer => ({
+  id: (raw.id as string) || '',
+  providerName: (raw.providerName as string) || (raw.provider_name as string) || 'Bilinmeyen Sağlayıcı',
   premium: Number(raw.premium || raw.price || 0),
-  currency: raw.currency || 'TRY',
-  coverageDetails: raw.coverageDetails || raw.coverage_details || {},
+  currency: (raw.currency as string) || 'TRY',
+  coverageDetails: (raw.coverageDetails as Record<string, any>) || (raw.coverage_details as Record<string, any>) || {},
   score: Number(raw.score || raw.trust || 0),
-  badges: Array.isArray(raw.badges) ? raw.badges : (raw.highlight === 'recommended' ? ['recommended'] : []),
+  badges: Array.isArray(raw.badges) ? (raw.badges as string[]) : (raw.highlight === 'recommended' ? ['recommended'] : []),
   isDemo: !!raw.isDemo,
-  packageName: raw.packageName || raw.package_name || 'Kapsamlı Kasko Paketi'
+  packageName: (raw.packageName as string) || (raw.package_name as string) || 'Kapsamlı Kasko Paketi'
 });
 
 export default function InsurancePurchase() {
@@ -68,7 +69,7 @@ export default function InsurancePurchase() {
   const { user } = useAuth();
   
   const [step, setStep] = useState<Step>('FORM');
-  const [vehicle, setVehicle] = useState<any>(null);
+  const [vehicle, setVehicle] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -86,14 +87,14 @@ export default function InsurancePurchase() {
   });
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !user) return;
     const fetchVehicle = async () => {
-      const { data } = await db.from("vehicles").select("*");
-      const v = data?.find((v: any) => v.id === id);
-      if (v) setVehicle(v);
+      const { data, error } = await db.from("vehicles").select("*").eq("id", id).eq("user_id", user.id).maybeSingle();
+      if (data) setVehicle(data);
+      if (error) console.error("Araç bilgisi yüklenemedi:", error);
     };
     fetchVehicle();
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     setPaymentForm((prev) => ({

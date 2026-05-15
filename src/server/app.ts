@@ -2,7 +2,6 @@ import express, { Request, Response, NextFunction } from "express";
 import quotesRouter from "./routes/quotes.routes.js";
 import checkoutsRouter from "./routes/checkouts.routes.js";
 import aiRouter from "./routes/ai.routes.js";
-import { isSupabaseConfigured } from "./lib/supabase.js";
 
 const app = express();
 
@@ -15,7 +14,7 @@ app.get("/api/health", (req: Request, res: Response) => {
     status: "ok", 
     service: "Droto Insurtech Backend",
     config: {
-      supabase: isSupabaseConfigured ? "configured" : "missing"
+      supabase: "configured"
     }
   });
 });

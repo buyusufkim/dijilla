@@ -12,7 +12,7 @@ export type Database = {
       quote_requests: {
         Row: {
           id: string
-          user_id: string | null
+          user_id: string
           vehicle_id: string
           status: string
           type: string
@@ -21,7 +21,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          user_id?: string | null
+          user_id?: string
           vehicle_id: string
           status?: string
           type: string
@@ -30,7 +30,7 @@ export type Database = {
         }
         Update: {
           id?: string
-          user_id?: string | null
+          user_id?: string
           vehicle_id?: string
           status?: string
           type?: string
@@ -192,7 +192,10 @@ export type Database = {
           id: string
           full_name: string | null
           email: string | null
-          phone: string | null
+          role: string | null
+          avatar_url: string | null
+          points: number
+          notification_settings: Json | null
           created_at: string
           updated_at: string
         }
@@ -200,7 +203,10 @@ export type Database = {
           id: string
           full_name?: string | null
           email?: string | null
-          phone?: string | null
+          role?: string | null
+          avatar_url?: string | null
+          points?: number
+          notification_settings?: Json | null
           created_at?: string
           updated_at?: string
         }
@@ -208,125 +214,12 @@ export type Database = {
           id?: string
           full_name?: string | null
           email?: string | null
-          phone?: string | null
+          role?: string | null
+          avatar_url?: string | null
+          points?: number
+          notification_settings?: Json | null
           created_at?: string
           updated_at?: string
-        }
-      }
-      user_consents: {
-        Row: {
-          id: string
-          user_id: string
-          consent_type: string
-          is_granted: boolean
-          version: string
-          ip_address: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          consent_type: string
-          is_granted?: boolean
-          version: string
-          ip_address?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          consent_type?: string
-          is_granted?: boolean
-          version?: string
-          ip_address?: string | null
-          created_at?: string
-        }
-      }
-      selected_offers: {
-        Row: {
-          id: string
-          quote_request_id: string
-          offer_id: string
-          user_id: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          quote_request_id: string
-          offer_id: string
-          user_id?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          quote_request_id?: string
-          offer_id?: string
-          user_id?: string | null
-          created_at?: string
-        }
-      }
-      notifications: {
-        Row: {
-          id: string
-          user_id: string
-          title: string
-          message: string
-          type: string
-          is_read: boolean
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          title: string
-          message: string
-          type: string
-          is_read?: boolean
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          message?: string
-          type?: string
-          is_read?: boolean
-          created_at?: string
-        }
-      }
-      audit_logs: {
-        Row: {
-          id: string
-          user_id: string | null
-          action: string
-          entity_type: string
-          entity_id: string | null
-          old_data: Json | null
-          new_data: Json | null
-          ip_address: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          action: string
-          entity_type: string
-          entity_id?: string | null
-          old_data?: Json | null
-          new_data?: Json | null
-          ip_address?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          action?: string
-          entity_type?: string
-          entity_id?: string | null
-          old_data?: Json | null
-          new_data?: Json | null
-          ip_address?: string | null
-          created_at?: string
         }
       }
       vehicles: {
@@ -371,6 +264,259 @@ export type Database = {
           tax_status?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      homes: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          address: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          address: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          address?: string
+          created_at?: string
+        }
+      }
+      documents: {
+        Row: {
+          id: string
+          user_id: string
+          vehicle_id: string | null
+          type: string
+          title: string
+          expiry_date: string | null
+          status: string
+          file_url: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          vehicle_id?: string | null
+          type: string
+          title: string
+          expiry_date?: string | null
+          status?: string
+          file_url?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          vehicle_id?: string | null
+          type?: string
+          title?: string
+          expiry_date?: string | null
+          status?: string
+          file_url?: string | null
+          created_at?: string
+        }
+      }
+      expenses: {
+        Row: {
+          id: string
+          user_id: string
+          vehicle_id: string | null
+          category: string
+          title: string
+          amount: number
+          expense_date: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          vehicle_id?: string | null
+          category: string
+          title: string
+          amount: number
+          expense_date?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          vehicle_id?: string | null
+          category?: string
+          title?: string
+          amount?: number
+          expense_date?: string
+          created_at?: string
+        }
+      }
+      maintenance_records: {
+        Row: {
+          id: string
+          user_id: string
+          vehicle_id: string
+          service_type: string
+          date: string
+          mileage: number | null
+          cost: number | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          vehicle_id: string
+          service_type: string
+          date: string
+          mileage?: number | null
+          cost?: number | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          vehicle_id?: string
+          service_type?: string
+          date?: string
+          mileage?: number | null
+          cost?: number | null
+          notes?: string | null
+          created_at?: string
+        }
+      }
+      appointments: {
+        Row: {
+          id: string
+          user_id: string
+          vehicle_id: string
+          service_type: string
+          appointment_date: string
+          location: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          vehicle_id: string
+          service_type: string
+          appointment_date: string
+          location?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          vehicle_id?: string
+          service_type?: string
+          appointment_date?: string
+          location?: string | null
+          status?: string
+          created_at?: string
+        }
+      }
+      reminders: {
+        Row: {
+          id: string
+          user_id: string
+          vehicle_id: string
+          title: string
+          date: string
+          completed: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          vehicle_id: string
+          title: string
+          date: string
+          completed?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          vehicle_id?: string
+          title?: string
+          date?: string
+          completed?: boolean
+          created_at?: string
+        }
+      }
+      service_requests: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          plate: string | null
+          phone: string
+          location_address: string | null
+          destination: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: string
+          plate?: string | null
+          phone: string
+          location_address?: string | null
+          destination?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          plate?: string | null
+          phone?: string
+          location_address?: string | null
+          destination?: string | null
+          status?: string
+          created_at?: string
+        }
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string
+          type: string
+          is_read: boolean
+          link: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          message: string
+          type?: string
+          is_read?: boolean
+          link?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          message?: string
+          type?: string
+          is_read?: boolean
+          link?: string | null
+          created_at?: string
         }
       }
     }

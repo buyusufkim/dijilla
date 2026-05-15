@@ -4,6 +4,7 @@ import { useNotifications } from "@/context/NotificationContext";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/supabase-service";
+import { supabase } from "@/supabase";
 
 import { DashboardHeader } from "@/components/home/DashboardHeader";
 import { AlertBanners } from "@/components/home/AlertBanners";
@@ -30,40 +31,43 @@ export default function Home() {
     // Fetch Profile
     const fetchProfile = async () => {
       try {
-        const { data } = await db.from("profiles").select("*");
-        const userProfile = data?.find((p: any) => p.id === user.id);
-        if (userProfile) {
-          setProfile(userProfile);
-        }
+        const { data } = await db.from("profiles").select("*").eq("id", user.id).maybeSingle();
+        if (data) setProfile(data);
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
     };
     fetchProfile();
 
-    // Subscribe to Vehicles
-    const unsubscribeVehicles = db.from("vehicles").subscribe((data) => {
-      const filtered = data.filter((v: any) => v.user_id === user.id);
-      // Sort by created_at desc
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setVehicles(filtered);
+    // Fetch Vehicles
+    const fetchVehicles = async () => {
+      const { data } = await db.from("vehicles").select("*").eq("user_id", user.id).order('created_at', { ascending: false });
+      if (data) setVehicles(data);
       setLoadingVehicles(false);
-    });
+    };
+    fetchVehicles();
 
-    // Subscribe to Maintenance Appointments
-    const unsubscribeMA = db.from("appointments").subscribe((data) => {
-      const filtered = data.filter((a: any) => 
-        a.user_id === user.id && 
-        a.status === "scheduled"
-      );
-      // Sort by appointment_date asc
-      filtered.sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime());
-      setMaintenanceAppointments(filtered);
-    });
+    // Fetch Appointments
+    const fetchAppointments = async () => {
+      const { data } = await db.from("appointments").select("*").eq("user_id", user.id).eq("status", "scheduled").order('appointment_date', { ascending: true });
+      if (data) setMaintenanceAppointments(data);
+    };
+    fetchAppointments();
+
+    // Subscribe to changes
+    const vehicleSubscription = supabase
+      .channel('home_vehicles')
+      .on("postgres_changes", { event: "*", schema: "public", table: "vehicles", filter: `user_id=eq.${user.id}` }, fetchVehicles)
+      .subscribe();
+      
+    const appointmentSubscription = supabase
+      .channel('home_appointments')
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointments", filter: `user_id=eq.${user.id}` }, fetchAppointments)
+      .subscribe();
 
     return () => {
-      unsubscribeVehicles();
-      unsubscribeMA();
+      supabase.removeChannel(vehicleSubscription);
+      supabase.removeChannel(appointmentSubscription);
     };
   }, [user]);
 
@@ -81,12 +85,9 @@ export default function Home() {
   const criticalNotification = notifications.find(n => n.type === "warning" && !n.read);
   const upcomingMaintenance = maintenanceAppointments[0];
   
-  const displayName = familyLoading
-    ? "Yükleniyor..."
-    : profile?.full_name?.split(" ")[0] ||
+  const displayName = profile?.full_name?.split(" ")[0] ||
       user?.user_metadata?.full_name?.split(" ")[0] ||
       user?.email?.split("@")[0] ||
-      activeMember?.name?.split(" ")[0] ||
       "Sürücü";
   
   return (

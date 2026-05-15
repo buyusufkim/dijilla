@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/supabase-service";
+import { supabase } from "@/supabase";
 import { toast } from "sonner";
 
 type Document = {
@@ -53,6 +54,7 @@ export default function Glovebox() {
     expiry_date: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -60,14 +62,18 @@ export default function Glovebox() {
       return;
     }
 
-    const unsubscribe = db.from("documents").subscribe((data) => {
-      const filtered = data.filter((d: any) => d.user_id === user.id);
-      // Sort by created_at desc if available, or just use default
-      setDocuments(filtered as Document[]);
+    const fetchDocs = async () => {
+      const { data } = await db.from("documents").select("*").eq("user_id", user.id);
+      if (data) setDocuments(data as Document[]);
       setLoading(false);
-    });
+    };
+    fetchDocs();
 
-    return () => unsubscribe();
+    const sub = supabase.channel('glovebox_docs').on("postgres_changes", { event: "*", schema: "public", table: "documents", filter: `user_id=eq.${user.id}` }, fetchDocs).subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
   }, [user]);
 
   const getStatusColor = (status: Document["status"]) => {
@@ -95,6 +101,7 @@ export default function Glovebox() {
     if (!user) return;
     
     setIsSubmitting(true);
+    setErrorMessage(null);
     try {
       // Determine status based on expiry date
       const expiry = new Date(newDoc.expiry_date);
@@ -109,7 +116,7 @@ export default function Glovebox() {
         status = "warning";
       }
 
-      await db.from("documents").insert({
+      const { error } = await db.from("documents").insert({
         user_id: user.id,
         title: newDoc.title,
         type: newDoc.type,
@@ -117,6 +124,8 @@ export default function Glovebox() {
         status,
         created_at: new Date().toISOString()
       });
+
+      if (error) throw error;
       
       setIsAddOpen(false);
       setNewDoc({ title: "", type: "other", expiry_date: "" });
@@ -124,6 +133,7 @@ export default function Glovebox() {
     } catch (error) {
       console.error("Error adding document:", error);
       toast.error("Belge eklenirken bir hata oluştu.");
+      setErrorMessage("Belge kaydedilemedi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -131,7 +141,7 @@ export default function Glovebox() {
 
   const handleDelete = async (id: string) => {
     try {
-      await db.from("documents").delete(id);
+      await db.from("documents").delete().eq("id", id);
       toast.success("Belge silindi.");
     } catch (error) {
       console.error("Error deleting document:", error);
@@ -289,7 +299,7 @@ export default function Glovebox() {
           <h3 className="font-semibold mb-1">Yeni Belge Tara</h3>
           <p className="text-sm text-white/40 mb-4">Belgenizin fotoğrafını çekin, Droto otomatik olarak bilgileri okusun.</p>
           <Button 
-            onClick={() => toast.info("Demo modunda kamera erişimi kısıtlıdır. Lütfen manuel ekleme yapın.")}
+            onClick={() => toast.info("Kamera erişimi şu an kısıtlıdır. Lütfen manuel ekleme yapın.")}
             variant="outline" 
             className="border-[#00E5FF]/30 text-[#00E5FF] hover:bg-[#00E5FF]/10 rounded-xl"
           >

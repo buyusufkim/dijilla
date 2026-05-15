@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/supabase-service";
+import { supabase } from "@/supabase";
 import { calculateRisk, RiskAnalysis } from "@/lib/risk-engine";
 
 type Vehicle = {
@@ -52,17 +53,17 @@ export default function ProtectionDashboard() {
 
     const fetchVehicle = async () => {
       try {
-        const { data, error } = await db.from("vehicles").select("*");
+        const { data, error } = await db.from("vehicles").select("*").eq("id", id).eq("user_id", user.id).maybeSingle();
         if (error) {
           console.error("Error fetching vehicles:", error);
           setLoading(false);
           return;
         }
 
-        const v = (data as any[])?.find((v: any) => v.id === id);
-        if (v) {
-          setVehicle(v as Vehicle);
+        if (data) {
+          setVehicle(data as Vehicle);
         } else {
+          setVehicle(null);
           setLoading(false);
         }
       } catch (err) {
@@ -70,24 +71,43 @@ export default function ProtectionDashboard() {
         setLoading(false);
       }
     };
-
     fetchVehicle();
 
-    const unsubscribe = db.from("expenses").subscribe((data) => {
-      const filtered = data.filter((e: any) => e.vehicle_id === id);
-      // Sort by expense_date desc
-      filtered.sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
-      setExpenses(filtered as Expense[]);
+    const fetchExpenses = async () => {
+      const { data } = await db.from("expenses").select("*").eq("vehicle_id", id).eq("user_id", user.id).order('expense_date', { ascending: false });
+      if (data) setExpenses(data as Expense[]);
       setLoading(false);
-    });
+    };
+    fetchExpenses();
 
-    return () => unsubscribe();
+    const sub = supabase.channel(`dashboard_${id}_expenses`).on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `vehicle_id=eq.${id}` }, fetchExpenses).subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
   }, [user, id]);
 
-  if (loading || !vehicle) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#050505]">
         <div className="w-8 h-8 border-2 border-[#00E5FF] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!vehicle) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 text-center space-y-6">
+        <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center">
+          <ShieldAlert className="w-10 h-10 text-red-500" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-black tracking-tighter">Access Denied</h2>
+          <p className="text-white/40 text-sm max-w-xs">You don't have permission to view this protection dashboard or the vehicle doesn't exist.</p>
+        </div>
+        <Button onClick={() => navigate(-1)} variant="outline" className="border-white/10 rounded-2xl px-10 h-14 font-bold">
+          Go Back
+        </Button>
       </div>
     );
   }

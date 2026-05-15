@@ -1,50 +1,15 @@
 import { supabase } from '@/supabase';
+import type { Database } from '@/server/types';
+
+export { supabase };
+
+type TableName = keyof Database['public']['Tables'];
 
 // Configuration check
 export const isSupabaseConfigured = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 // --- Database Service ---
-export const db = {
-  from: (table: string) => {
-    return {
-      select: async (columns: string = '*') => {
-        return await supabase.from(table).select(columns);
-      },
-      insert: async (data: any) => {
-        return await supabase.from(table).insert(data).select();
-      },
-      update: async (data: any, id: string) => {
-        return await supabase.from(table).update(data).eq('id', id);
-      },
-      delete: async (id: string) => {
-        return await supabase.from(table).delete().eq('id', id);
-      },
-      upsert: async (data: any) => {
-        return await supabase.from(table).upsert(data);
-      },
-      // Simplified Realtime
-      subscribe: (callback: (data: any[]) => void) => {
-        const fetchAndNotify = async () => {
-          const { data } = await db.from(table).select('*');
-          if (data) callback(data);
-        };
-
-        fetchAndNotify();
-
-        const channel = supabase
-          .channel(`public:${table}`)
-          .on("postgres_changes", { event: "*", schema: "public", table }, () => {
-            fetchAndNotify();
-          })
-          .subscribe();
-        
-        return () => {
-          supabase.removeChannel(channel);
-        };
-      }
-    };
-  }
-};
+export const db = supabase as any;
 
 // --- Auth Service ---
 export const auth = {

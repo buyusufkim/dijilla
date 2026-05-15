@@ -29,8 +29,8 @@ export class PolicyService {
       document_url: `https://storage.droto.com/policies/${checkout.id}.pdf`
     };
 
-    const { data: policy, error } = await (supabaseAdmin
-      .from("policies") as any)
+    const { data: policy, error } = await supabaseAdmin
+      .from("policies")
       .insert(policyData)
       .select()
       .single();
@@ -50,8 +50,8 @@ export class PolicyService {
    * @param userId The user ID.
    */
   async getPoliciesByUserId(userId: string): Promise<PolicyDTO[]> {
-    const { data, error } = await (supabaseAdmin
-      .from("policies") as any)
+    const { data, error } = await supabaseAdmin
+      .from("policies")
       .select("*")
       .eq("user_id", userId);
 

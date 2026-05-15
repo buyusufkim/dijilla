@@ -3,6 +3,7 @@ import { QuoteService } from "./quote.service.js";
 import { quoteRequestSchema } from "./quote.schemas.js";
 import { AuthRequest } from "../../lib/authMiddleware.js";
 import { ApiResponse } from "../../types.js";
+import { QuoteRequestDTO, QuoteResponseDTO } from "./quote.types.js";
 
 export class QuoteController {
   private quoteService = new QuoteService();
@@ -21,21 +22,21 @@ export class QuoteController {
             message: "Geçersiz giriş verisi.",
             details: validation.error.format()
           }
-        } as ApiResponse<any>);
+        } as ApiResponse<never>);
       }
 
-      const requestId = await this.quoteService.requestQuotes(validation.data as any);
+      const requestId = await this.quoteService.requestQuotes(validation.data as QuoteRequestDTO);
 
       return res.status(202).json({
         success: true,
         data: { requestId }
-      } as ApiResponse<any>);
+      } as ApiResponse<{ requestId: string }>);
     } catch (error: any) {
       console.error("[QuoteController] Error in requestQuotes:", error.message);
       return res.status(500).json({
         success: false,
         error: { message: error.message || "Teklif talebi oluşturulurken bir hata oluştu." }
-      } as ApiResponse<any>);
+      } as ApiResponse<never>);
     }
   }
 
@@ -48,7 +49,7 @@ export class QuoteController {
         return res.status(400).json({
           success: false,
           error: { message: "Talep ID'si ve yetkilendirme gereklidir." }
-        } as ApiResponse<any>);
+        } as ApiResponse<never>);
       }
 
       const response = await this.quoteService.getOffers(requestId, userId);
@@ -56,13 +57,13 @@ export class QuoteController {
       return res.status(200).json({
         success: true,
         data: response
-      } as ApiResponse<any>);
+      } as ApiResponse<QuoteResponseDTO>);
     } catch (error: any) {
       console.error(`[QuoteController] Error in getOffers for ${req.params.requestId}:`, error.message);
       return res.status(500).json({
         success: false,
         error: { message: error.message || "Teklifler getirilirken bir hata oluştu." }
-      } as ApiResponse<any>);
+      } as ApiResponse<never>);
     }
   }
 }

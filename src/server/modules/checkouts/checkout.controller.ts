@@ -3,6 +3,7 @@ import { CheckoutService } from "./checkout.service.js";
 import { createCheckoutSchema, paymentSchema } from "./checkout.schemas.js";
 import { AuthRequest } from "../../lib/authMiddleware.js";
 import { ApiResponse } from "../../types.js";
+import { CheckoutResponseDTO, CreateCheckoutInput, PaymentInput } from "./checkout.types.js";
 
 export class CheckoutController {
   private checkoutService = new CheckoutService();
@@ -21,21 +22,21 @@ export class CheckoutController {
             message: "Geçersiz giriş verisi.",
             details: validation.error.format()
           }
-        } as ApiResponse<any>);
+        } as ApiResponse<never>);
       }
 
-      const checkout = await this.checkoutService.createCheckout(validation.data as any);
+      const checkout = await this.checkoutService.createCheckout(validation.data as CreateCheckoutInput);
 
       return res.status(201).json({
         success: true,
         data: checkout
-      } as ApiResponse<any>);
+      } as ApiResponse<CheckoutResponseDTO>);
     } catch (error: any) {
       console.error("[CheckoutController] Error in createCheckout:", error.message);
       return res.status(500).json({
         success: false,
         error: { message: error.message || "Ödeme oturumu oluşturulurken bir hata oluştu." }
-      } as ApiResponse<any>);
+      } as ApiResponse<never>);
     }
   }
 
@@ -52,21 +53,21 @@ export class CheckoutController {
             message: "Geçersiz ödeme verisi veya yetkilendirme.",
             details: validation.error?.format()
           }
-        } as ApiResponse<any>);
+        } as ApiResponse<never>);
       }
 
-      await this.checkoutService.processPayment(checkoutId, validation.data as any, userId);
+      await this.checkoutService.processPayment(checkoutId, validation.data as PaymentInput, userId);
 
       return res.status(200).json({
         success: true,
         data: { message: "Ödeme başarıyla tamamlandı, poliçe oluşturuldu." }
-      } as ApiResponse<any>);
+      } as ApiResponse<{ message: string }>);
     } catch (error: any) {
       console.error(`[CheckoutController] Error in processPayment for ${req.params.checkoutId}:`, error.message);
       return res.status(500).json({
         success: false,
         error: { message: error.message || "Ödeme işlemi sırasında bir hata oluştu." }
-      } as ApiResponse<any>);
+      } as ApiResponse<never>);
     }
   }
 }

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/lib/supabase-service";
+import { db, supabase } from "@/lib/supabase-service";
 import L from 'leaflet';
 
 import { Station, getDistanceFromLatLonInKm, DefaultIcon } from "@/components/fuel/types";
@@ -35,10 +35,10 @@ export default function Fuel() {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
   const [stations, setStations] = useState<Station[]>([]);
   const [loadingStations, setLoadingStations] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
   const [locationInfo, setLocationInfo] = useState<{city: string, district: string} | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-  const isDemoMode = process.env.ENABLE_DEMO_MODE === "true";
 
   useEffect(() => {
     if (!userLocation) return;
@@ -64,19 +64,28 @@ export default function Fuel() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = db.from("vehicles").subscribe((data) => {
-      const vData = data.filter((v: any) => v.user_id === user.id);
-      setVehicles(vData);
-      if (vData.length > 0 && !selectedVehicleId) {
-        setSelectedVehicleId(vData[0].id);
-        if (vData[0].fuel_type === "Elektrik") {
-          setActiveTab("electric");
-        } else {
-          setActiveTab("fuel");
+
+    const fetchVehicles = async () => {
+      const { data } = await db.from("vehicles").select("*").eq("user_id", user.id);
+      if (data) {
+        setVehicles(data);
+        if (data.length > 0 && !selectedVehicleId) {
+          setSelectedVehicleId(data[0].id);
+          if (data[0].fuel_type === "Elektrik") {
+            setActiveTab("electric");
+          } else {
+            setActiveTab("fuel");
+          }
         }
       }
-    });
-    return () => unsubscribe();
+    };
+    fetchVehicles();
+
+    const sub = supabase.channel('fuel_vehicles').on("postgres_changes", { event: "*", schema: "public", table: "vehicles", filter: `user_id=eq.${user.id}` }, fetchVehicles).subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
   }, [user, selectedVehicleId]);
 
   const handleVehicleChange = (vid: string) => {
@@ -188,56 +197,9 @@ export default function Fuel() {
           return;
         }
 
-        // Fallback to mock data ONLY if demo mode is enabled
-        if (isDemoMode) {
-          const mockStations: Station[] = [
-            {
-              id: "m1",
-              name: activeTab === "fuel" ? "Shell Petrol (Demo)" : "ZES Şarj İstasyonu (Demo)",
-              distance: "1.2 km",
-              distanceValue: 1.2,
-              prices: activeTab === "fuel" ? {
-                benzin: "43.65 TL",
-                motorin: "42.25 TL",
-                lpg: "21.95 TL"
-              } : undefined,
-              price: activeTab === "electric" ? "8.50 TL/kWh" : undefined,
-              priceValue: activeTab === "fuel" ? 43.65 : 8.50,
-              rating: 4.8,
-              type: activeTab,
-              status: "open",
-              address: "Merkez Mah. Atatürk Cad. No:45",
-              lat: userLocation.lat + 0.01,
-              lon: userLocation.lon + 0.01,
-              isDemo: true
-            },
-            {
-              id: "m2",
-              name: activeTab === "fuel" ? "Opet (Demo)" : "Eşarj Noktası (Demo)",
-              distance: "2.5 km",
-              distanceValue: 2.5,
-              prices: activeTab === "fuel" ? {
-                benzin: "43.45 TL",
-                motorin: "42.05 TL",
-                lpg: "21.85 TL"
-              } : undefined,
-              price: activeTab === "electric" ? "7.90 TL/kWh" : undefined,
-              priceValue: activeTab === "fuel" ? 43.45 : 7.90,
-              rating: 4.5,
-              type: activeTab,
-              status: "open",
-              address: "Cumhuriyet Mah. İstanbul Yolu 3. km",
-              lat: userLocation.lat - 0.015,
-              lon: userLocation.lon + 0.005,
-              isDemo: true
-            }
-          ];
-          setStations(mockStations);
-          setLastUpdated(null);
-        } else {
-          setStations([]);
-          setLastUpdated(null);
-        }
+        setError("İstasyon bilgileri şu an alınamıyor. Lütfen internet bağlantınızı kontrol edin.");
+        setStations([]);
+        setLastUpdated(null);
       } finally {
         setLoadingStations(false);
       }
@@ -398,7 +360,7 @@ export default function Fuel() {
       <MapSection userLocation={userLocation} filteredStations={filteredStations} />
 
       {/* Company Prices Section */}
-      <CompanyPrices activeTab={activeTab} locationInfo={locationInfo} isDemoMode={isDemoMode} />
+      <CompanyPrices activeTab={activeTab} locationInfo={locationInfo} />
 
       {/* Stations List */}
       <div className="space-y-4">
@@ -406,10 +368,7 @@ export default function Fuel() {
           <div className="flex flex-col">
             <h2 className="text-sm font-medium text-white/60 uppercase tracking-wider">Yakındaki İstasyonlar</h2>
             <p className="text-[10px] text-white/30 mt-0.5">
-              {lastUpdated 
-                ? `Son Güncelleme: ${new Date(lastUpdated).toLocaleDateString('tr-TR')} ${new Date(lastUpdated).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`
-                : "Anlık fiyat alınamadı"}
-              {isDemoMode && <span className="ml-2 text-amber-500/60">(Demo Modu)</span>}
+              Son Güncelleme: {new Date().toLocaleDateString('tr-TR')}
             </p>
           </div>
           <span className="text-xs text-[#00E5FF] font-medium">

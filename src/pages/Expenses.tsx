@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/supabase-service";
+import { supabase } from "@/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 type Expense = {
@@ -51,15 +52,18 @@ export default function Expenses() {
       return;
     }
 
-    const unsubscribe = db.from("expenses").subscribe((data) => {
-      const filtered = data.filter((e: any) => e.user_id === user.id);
-      // Sort by expense_date desc
-      filtered.sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
-      setExpenses(filtered as Expense[]);
+    const fetchExpenses = async () => {
+      const { data } = await db.from("expenses").select("*").eq("user_id", user.id).order('expense_date', { ascending: false });
+      if (data) setExpenses(data as Expense[]);
       setLoading(false);
-    });
+    };
+    fetchExpenses();
 
-    return () => unsubscribe();
+    const sub = supabase.channel('expenses_list').on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${user.id}` }, fetchExpenses).subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
   }, [user]);
 
   const handleAddExpense = async (e: React.FormEvent) => {

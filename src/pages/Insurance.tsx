@@ -137,11 +137,14 @@ function AssetSelection({
 }) {
   const { user } = useAuth();
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [homes, setHomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (category === 'vehicle' && user) {
-      fetchVehicles();
+    if (user) {
+      if (category === 'vehicle') fetchVehicles();
+      else if (category === 'home') fetchHomes();
+      else setLoading(false);
     } else {
       setLoading(false);
     }
@@ -150,36 +153,43 @@ function AssetSelection({
   const fetchVehicles = async () => {
     if (!user) return;
     try {
-      const { data } = await db.from("vehicles").select("*");
-      const vehicleData = data?.filter((v: any) => v.user_id === user.id) || [];
-      
-      // Calculate age for each vehicle
+      const { data } = await db.from("vehicles").select("*").eq("user_id", user.id);
+      const vehicleData = data || [];
       const currentYear = new Date().getFullYear();
-      const vehiclesWithAge = vehicleData.map((v: any) => ({
+      setVehicles(vehicleData.map((v: any) => ({
         ...v,
         name: v.brand_model,
         desc: v.plate,
         age: currentYear - (v.year || currentYear)
-      }));
-      
-      setVehicles(vehiclesWithAge);
+      })));
     } catch (error) {
-      console.error('Error fetching vehicles:', error);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Mock assets based on category
-  const assets = {
+  const fetchHomes = async () => {
+    if (!user) return;
+    try {
+      const { data } = await db.from("homes").select("*").eq("user_id", user.id);
+      setHomes((data || []).map((h: any) => ({
+        ...h,
+        name: h.name,
+        desc: h.address
+      })));
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const assets: Record<string, any[]> = {
     vehicle: vehicles,
-    home: [
-      { id: 3, name: "Beşiktaş Ev", desc: "Barbaros Blv. No:145" },
-      { id: 4, name: "Yazlık", desc: "Bodrum/Muğla" },
-    ],
+    home: homes,
     health: [
-      { id: 5, name: "Mustafa Gülmarka", desc: "Kendim" },
-      { id: 6, name: "Ayşe Gülmarka", desc: "Eşim" },
+      { id: 'h1', name: user?.user_metadata?.full_name || user?.email?.split('@')[0], desc: "Kendim" }
     ],
   };
 

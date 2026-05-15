@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '@/lib/supabase-service';
-import { performDemoLogin } from '@/lib/auth-logic';
 
 interface AuthContextType {
   user: any | null;
@@ -8,7 +7,6 @@ interface AuthContextType {
   signInWithEmail: (email: string, password: string) => Promise<{ error: any }>;
   signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  demoLogin: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -17,7 +15,6 @@ const AuthContext = createContext<AuthContextType>({
   signInWithEmail: async () => ({ error: null }),
   signUpWithEmail: async () => ({ error: null }),
   signOut: async () => {},
-  demoLogin: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -77,14 +74,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await auth.signOut();
   };
 
-  const demoLogin = async () => {
-    setLoading(true);
-    await performDemoLogin();
-    setLoading(false);
-  };
-
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithEmail, signUpWithEmail, signOut: signOutUser, demoLogin }}>
+    <AuthContext.Provider value={{ user, loading, signInWithEmail, signUpWithEmail, signOut: signOutUser }}>
       {children}
     </AuthContext.Provider>
   );

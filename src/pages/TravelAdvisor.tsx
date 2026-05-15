@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/supabase-service";
+import { supabase } from "@/supabase";
 import { aiService } from "@/services/aiService";
 
 import { TravelHeader } from "@/components/travel/TravelHeader";
@@ -76,14 +77,23 @@ export default function TravelAdvisor() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = db.from("vehicles").subscribe((data) => {
-      const vData = data.filter((v: any) => v.user_id === user.id) as any[];
-      setVehicles(vData);
-      if (vData.length > 0 && !selectedVehicle) {
-        setSelectedVehicle(vData[0]);
+
+    const fetchVehicles = async () => {
+      const { data } = await db.from("vehicles").select("*").eq("user_id", user.id);
+      if (data) {
+        setVehicles(data);
+        if (data.length > 0 && !selectedVehicle) {
+          setSelectedVehicle(data[0]);
+        }
       }
-    });
-    return () => unsubscribe();
+    };
+    fetchVehicles();
+
+    const sub = supabase.channel('travel_vehicles').on("postgres_changes", { event: "*", schema: "public", table: "vehicles", filter: `user_id=eq.${user.id}` }, fetchVehicles).subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
   }, [user, selectedVehicle]);
 
   const handleUseMyLocation = () => {

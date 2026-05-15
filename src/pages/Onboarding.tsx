@@ -27,7 +27,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { user, signInWithEmail, signUpWithEmail, demoLogin } = useAuth();
+  const { user, signInWithEmail, signUpWithEmail } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -150,14 +150,11 @@ export default function Onboarding() {
                     size="lg"
                     variant="outline"
                     className="border-white/10 hover:bg-white/5 text-white px-10 py-7 text-xl rounded-2xl w-full sm:w-auto"
-                    onClick={async () => {
-                      setLoading(true);
-                      await demoLogin();
-                      setLoading(false);
-                      navigate("/home");
+                    onClick={() => {
+                      document.getElementById('features-grid')?.scrollIntoView({ behavior: 'smooth' });
                     }}
                   >
-                    Demo Turu <Sparkles className="ml-2 w-5 h-5 text-[#FFD600]" />
+                    Keşfet <Sparkles className="ml-2 w-5 h-5 text-[#FFD600]" />
                   </Button>
                 </div>
               </div>
@@ -337,23 +334,6 @@ export default function Onboarding() {
                             <span className="bg-[#1A233A] px-4 text-white/40 tracking-widest">VEYA</span>
                           </div>
                         </div>
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={loading}
-                          onClick={async () => {
-                            setLoading(true);
-                            await demoLogin();
-                            setLoading(false);
-                            navigate("/home");
-                          }}
-                          className="w-full border-[#00E5FF]/20 text-[#00E5FF] hover:bg-[#00E5FF]/10 py-7 rounded-xl transition-all group relative overflow-hidden"
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#00E5FF]/0 via-[#00E5FF]/5 to-[#00E5FF]/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                          <Sparkles className="w-5 h-5 mr-2" />
-                          Hızlı Keşfet: Demo Hesabı
-                        </Button>
                       </>
                     )}
                   </form>

@@ -17,9 +17,6 @@ interface FamilyContextType {
   removeMember: (id: string) => void;
 }
 
-const LEGACY_STORAGE_KEY = "droto_family_members";
-const LEGACY_ACTIVE_MEMBER_KEY = "droto_active_member_id";
-
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 
 export function FamilyProvider({ children }: { children: React.ReactNode }) {
@@ -28,31 +25,23 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const [activeMember, setActiveMember] = useState<FamilyMember | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const userId = user?.id || "guest";
+  const userId = user?.id || "";
   
   const scopedStorageKey = useMemo(() => `droto_family_members_${userId}`, [userId]);
   const scopedActiveKey = useMemo(() => `droto_active_member_id_${userId}`, [userId]);
 
   // Load data on mount or user change
   useEffect(() => {
+    if (!user?.id) {
+       setMembers([]);
+       setActiveMember(null);
+       setLoading(false);
+       return;
+    }
+
     const loadData = () => {
       setLoading(true);
       try {
-        // Migration logic: If scoped data doesn't exist but legacy data does, migrate it
-        if (userId !== "guest" && !localStorage.getItem(scopedStorageKey)) {
-          const legacyMembers = localStorage.getItem(LEGACY_STORAGE_KEY);
-          if (legacyMembers) {
-            localStorage.setItem(scopedStorageKey, legacyMembers);
-            const legacyActiveId = localStorage.getItem(LEGACY_ACTIVE_MEMBER_KEY);
-            if (legacyActiveId) {
-              localStorage.setItem(scopedActiveKey, legacyActiveId);
-            }
-            // Clear legacy keys after migration
-            localStorage.removeItem(LEGACY_STORAGE_KEY);
-            localStorage.removeItem(LEGACY_ACTIVE_MEMBER_KEY);
-          }
-        }
-
         const storedMembers = localStorage.getItem(scopedStorageKey);
         const storedActiveId = localStorage.getItem(scopedActiveKey);
 
@@ -92,25 +81,25 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadData();
-  }, [userId, scopedStorageKey, scopedActiveKey]);
+  }, [user?.id, scopedStorageKey, scopedActiveKey]);
 
   // Persist members on change
   useEffect(() => {
-    if (!loading && userId) {
+    if (!loading && user?.id) {
       localStorage.setItem(scopedStorageKey, JSON.stringify(members));
     }
-  }, [members, loading, scopedStorageKey, userId]);
+  }, [members, loading, scopedStorageKey, user?.id]);
 
   // Persist active member on change
   useEffect(() => {
-    if (!loading && userId) {
+    if (!loading && user?.id) {
       if (activeMember) {
         localStorage.setItem(scopedActiveKey, activeMember.id);
       } else {
         localStorage.removeItem(scopedActiveKey);
       }
     }
-  }, [activeMember, loading, scopedActiveKey, userId]);
+  }, [activeMember, loading, scopedActiveKey, user?.id]);
 
   const addMember = (member: FamilyMember) => {
     setMembers((prev) => [...prev, member]);

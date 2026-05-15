@@ -34,7 +34,7 @@ export class QuoteService {
     // 1. Create quote request record in Supabase
     const quoteRequest = await this.repository.createQuoteRequest({
       vehicle_id: input.vehicleId,
-      user_id: input.userId || null,
+      user_id: input.userId || undefined,
       status: QuoteStatus.PENDING,
       type: input.type
     });

@@ -41,19 +41,16 @@ export default function Profile() {
 
     const fetchProfile = async () => {
       try {
-        const { data, error } = await db.from("profiles").select("*");
+        const { data, error } = await db.from("profiles").select("*").eq("id", user.id).maybeSingle();
         if (error) {
-          console.error("Error fetching profiles:", error);
+          console.error("Error fetching profile:", error);
           return;
         }
         
-        const userId = user.id;
-        const userProfile = (data as any[])?.find((p: any) => p.id === userId);
-        
-        if (userProfile) {
-          setProfile(userProfile);
-          if (userProfile.notification_settings) {
-            setNotificationSettings(userProfile.notification_settings);
+        if (data) {
+          setProfile(data);
+          if (data.notification_settings) {
+            setNotificationSettings(data.notification_settings);
           }
         }
       } catch (error) {
@@ -78,7 +75,7 @@ export default function Profile() {
     try {
       await db.from("profiles").update({
         notification_settings: newSettings
-      }, user.id);
+      }).eq("id", user.id);
     } catch (error) {
       console.error("Error updating notification settings:", error);
       // Revert state on error

@@ -3,8 +3,8 @@ import { Checkout, CheckoutInsert, CheckoutStatus } from "./checkout.types.js";
 
 export class CheckoutRepository {
   async createCheckout(data: CheckoutInsert): Promise<Checkout> {
-    const { data: checkout, error } = await (supabaseAdmin
-      .from("checkouts") as any)
+    const { data: checkout, error } = await supabaseAdmin
+      .from("checkouts")
       .insert(data)
       .select()
       .single();
@@ -18,8 +18,8 @@ export class CheckoutRepository {
   }
 
   async getCheckoutById(id: string): Promise<Checkout | null> {
-    const { data, error } = await (supabaseAdmin
-      .from("checkouts") as any)
+    const { data, error } = await supabaseAdmin
+      .from("checkouts")
       .select("*")
       .eq("id", id)
       .single();
@@ -33,8 +33,8 @@ export class CheckoutRepository {
   }
 
   async updateStatus(id: string, status: CheckoutStatus): Promise<void> {
-    const { error } = await (supabaseAdmin
-      .from("checkouts") as any)
+    const { error } = await supabaseAdmin
+      .from("checkouts")
       .update({ status })
       .eq("id", id);
 
@@ -44,8 +44,8 @@ export class CheckoutRepository {
   }
 
   async getOfferById(offerId: string): Promise<any | null> {
-    const { data, error } = await (supabaseAdmin
-      .from("normalized_offers") as any)
+    const { data, error } = await supabaseAdmin
+      .from("normalized_offers")
       .select("*, quote_requests(vehicle_id, type, user_id)")
       .eq("id", offerId)
       .single();

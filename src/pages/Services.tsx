@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { db } from "@/lib/supabase-service";
+import { supabase } from "@/supabase";
 import { useAuth } from "@/context/AuthContext";
 
 import { ServiceHeader } from "@/components/services/ServiceHeader";
@@ -27,14 +28,23 @@ export default function Services() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = db.from("vehicles").subscribe((data) => {
-      const vData = data.filter((v: any) => v.user_id === user.id);
-      setVehicles(vData);
-      if (vData.length > 0) {
-        setSelectedVehicle(vData[0]);
+
+    const fetchVehicles = async () => {
+      const { data } = await db.from("vehicles").select("*").eq("user_id", user.id);
+      if (data) {
+        setVehicles(data);
+        if (data.length > 0) {
+          setSelectedVehicle(data[0]);
+        }
       }
-    });
-    return () => unsubscribe();
+    };
+    fetchVehicles();
+
+    const sub = supabase.channel('services_vehicles').on("postgres_changes", { event: "*", schema: "public", table: "vehicles", filter: `user_id=eq.${user.id}` }, fetchVehicles).subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
   }, [user]);
 
   useEffect(() => {

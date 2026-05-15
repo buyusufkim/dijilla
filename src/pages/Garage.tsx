@@ -4,7 +4,7 @@ import { useFamily } from "@/context/FamilyContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/lib/supabase-service";
+import { db, supabase } from "@/lib/supabase-service";
 
 import { Vehicle, HomeAsset } from "@/components/garage/types";
 import { GarageHeader } from "@/components/garage/GarageHeader";
@@ -41,26 +41,33 @@ export default function Garage() {
       return;
     }
 
-    const unsubscribeVehicles = db.from("vehicles").subscribe((data) => {
-      const filtered = data.filter((v: any) => v.user_id === user.id);
-      setVehicles(filtered as Vehicle[]);
+    const fetchVehicles = async () => {
+      const { data } = await db.from("vehicles").select("*").eq("user_id", user.id);
+      if (data) setVehicles(data as Vehicle[]);
       setLoading(false);
-    });
+    };
+    fetchVehicles();
 
-    const unsubscribeHomes = db.from("homes").subscribe((data) => {
-      const filtered = data.filter((h: any) => h.user_id === user.id);
-      setHomes(filtered as HomeAsset[]);
-    });
+    const fetchHomes = async () => {
+      const { data } = await db.from("homes").select("*").eq("user_id", user.id);
+      if (data) setHomes(data as HomeAsset[]);
+    };
+    fetchHomes();
 
-    const unsubscribeMaintenance = db.from("maintenance_records").subscribe((data) => {
-      const filtered = data.filter((m: any) => m.user_id === user.id);
-      setMaintenanceRecords(filtered);
-    });
+    const fetchMaintenance = async () => {
+      const { data } = await db.from("maintenance_records").select("*").eq("user_id", user.id);
+      if (data) setMaintenanceRecords(data);
+    };
+    fetchMaintenance();
+
+    const vSub = supabase.channel('garage_vehicles').on("postgres_changes", { event: "*", schema: "public", table: "vehicles", filter: `user_id=eq.${user.id}` }, fetchVehicles).subscribe();
+    const hSub = supabase.channel('garage_homes').on("postgres_changes", { event: "*", schema: "public", table: "homes", filter: `user_id=eq.${user.id}` }, fetchHomes).subscribe();
+    const mSub = supabase.channel('garage_maintenance').on("postgres_changes", { event: "*", schema: "public", table: "maintenance_records", filter: `user_id=eq.${user.id}` }, fetchMaintenance).subscribe();
 
     return () => {
-      unsubscribeVehicles();
-      unsubscribeHomes();
-      unsubscribeMaintenance();
+      supabase.removeChannel(vSub);
+      supabase.removeChannel(hSub);
+      supabase.removeChannel(mSub);
     };
   }, [user]);
 

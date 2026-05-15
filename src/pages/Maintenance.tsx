@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/supabase-service";
+import { supabase } from "@/supabase";
 import { format } from "date-fns";
 import { aiService } from "@/services/aiService";
 
@@ -47,43 +48,48 @@ export default function Maintenance() {
   useEffect(() => {
     if (!user) return;
 
-    // Fetch vehicles
-    const unsubscribeVehicles = db.from("vehicles").subscribe((data) => {
-      const vList = data.filter((v: any) => v.user_id === user.id) as Vehicle[];
-      setVehicles(vList);
-      if (vList.length > 0 && !selectedVehicle) {
-        setSelectedVehicle(vList[0]);
+    const fetchVehicles = async () => {
+      const { data } = await db.from("vehicles").select("*").eq("user_id", user.id).order('created_at', { ascending: false });
+      if (data) {
+        setVehicles(data as Vehicle[]);
+        if (data.length > 0 && !selectedVehicle) {
+          setSelectedVehicle(data[0] as Vehicle);
+        }
       }
-    });
+    };
+    fetchVehicles();
 
-    return () => unsubscribeVehicles();
+    const sub = supabase.channel('maintenance_vehicles').on("postgres_changes", { event: "*", schema: "public", table: "vehicles", filter: `user_id=eq.${user.id}` }, fetchVehicles).subscribe();
+
+    return () => {
+      supabase.removeChannel(sub);
+    };
   }, [user]);
 
   useEffect(() => {
     if (!user || !selectedVehicle) return;
 
-    // Fetch records
-    const unsubscribeRecords = db.from("maintenance_records").subscribe((data) => {
-      const filtered = data.filter((r: any) => r.vehicle_id === selectedVehicle.id);
-      // Sort by date desc
-      filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setRecords(filtered as MaintenanceRecord[]);
-    });
+    const fetchRecords = async () => {
+      const { data } = await db.from("maintenance_records").select("*").eq("vehicle_id", selectedVehicle.id).order('date', { ascending: false });
+      if (data) setRecords(data as MaintenanceRecord[]);
+    };
+    fetchRecords();
 
-    // Fetch appointments
-    const unsubscribeAppointments = db.from("appointments").subscribe((data) => {
-      const filtered = data.filter((a: any) => a.vehicle_id === selectedVehicle.id && a.status === "scheduled");
-      // Sort by appointment_date asc
-      filtered.sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime());
-      setAppointments(filtered as MaintenanceAppointment[]);
-    });
+    const fetchAppointments = async () => {
+      const { data } = await db.from("appointments").select("*").eq("vehicle_id", selectedVehicle.id).eq("status", "scheduled").order('appointment_date', { ascending: true });
+      if (data) setAppointments(data as MaintenanceAppointment[]);
+    };
+    fetchAppointments();
+
+    const rSub = supabase.channel(`maintenance_${selectedVehicle.id}_records`).on("postgres_changes", { event: "*", schema: "public", table: "maintenance_records", filter: `vehicle_id=eq.${selectedVehicle.id}` }, fetchRecords).subscribe();
+    const aSub = supabase.channel(`maintenance_${selectedVehicle.id}_appointments`).on("postgres_changes", { event: "*", schema: "public", table: "appointments", filter: `vehicle_id=eq.${selectedVehicle.id}` }, fetchAppointments).subscribe();
 
     // Get AI Recommendations
     fetchRecommendations(selectedVehicle);
 
     return () => {
-      unsubscribeRecords();
-      unsubscribeAppointments();
+      supabase.removeChannel(rSub);
+      supabase.removeChannel(aSub);
     };
   }, [user, selectedVehicle]);
 
