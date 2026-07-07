@@ -149,7 +149,7 @@ export default function Onboarding() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-white/10 hover:bg-white/5 text-white px-10 py-7 text-xl rounded-2xl w-full sm:w-auto"
+                    className="bg-transparent border-white/10 hover:bg-white/5 text-white hover:text-white px-10 py-7 text-xl rounded-2xl w-full sm:w-auto"
                     onClick={() => {
                       document.getElementById('features-grid')?.scrollIntoView({ behavior: 'smooth' });
                     }}
