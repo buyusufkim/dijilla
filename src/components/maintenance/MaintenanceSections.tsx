@@ -52,7 +52,7 @@ export const AppointmentsSection: React.FC<AppointmentsSectionProps> = ({ appoin
     <div className="flex items-center justify-between mb-4">
       <h2 className="text-xl font-bold flex items-center gap-2">
         <Calendar className="w-5 h-5 text-[#00E676]" />
-        Yaklaşan Randevular
+        Kişisel Bakım Planları
       </h2>
       <Button 
         variant="outline" 
@@ -60,7 +60,7 @@ export const AppointmentsSection: React.FC<AppointmentsSectionProps> = ({ appoin
         className="border-[#00E676]/30 text-[#00E676] hover:bg-[#00E676]/10"
         onClick={onAddAppointment}
       >
-        <Plus className="w-4 h-4 mr-2" /> Randevu Al
+        <Plus className="w-4 h-4 mr-2" /> Plan Ekle
       </Button>
     </div>
     {appointments.length === 0 ? (

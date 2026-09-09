@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db } from '@/lib/supabase-service';
+import { auth } from '@/lib/supabase-service';
+import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
-  user: any | null;
+  user: User | null;
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<{ error: any }>;
   signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
@@ -18,7 +19,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,23 +46,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUpWithEmail = async (email: string, password: string, fullName: string) => {
     setLoading(true);
     try {
-      const { data, error } = await auth.signUp({
+      const { error } = await auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/login`,
           data: { full_name: fullName }
         }
       });
       
-      if (data?.user && !error) {
-        await db.from('profiles').upsert({
-          id: data.user.id,
-          full_name: fullName,
-          email: email,
-          points: 0,
-          created_at: new Date().toISOString()
-        });
-      }
+      // Profile creation must run after verification or in a database trigger.
       setLoading(false);
       return { error };
     } catch (error) {
@@ -71,7 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOutUser = async () => {
-    await auth.signOut();
+    const { error } = await auth.signOut();
+    if (error) throw new Error('Çıkış yapılamadı. Tekrar deneyin.');
   };
 
   return (

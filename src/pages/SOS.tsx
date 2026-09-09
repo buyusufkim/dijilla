@@ -53,12 +53,12 @@ export default function SOS() {
           <p className="mt-8 text-center text-white/80 font-medium z-10">
             Acil durum butonuna basarak
             <br />
-            anında yardım çağırın.
+            112 arama seçeneğini açın.
           </p>
 
           <div className="mt-6 flex items-center gap-2 text-sm text-white/50 z-10 bg-black/20 px-4 py-2 rounded-full border border-white/5">
             <MapPin className="w-4 h-4 text-[#00E5FF]" />
-            Konumunuz otomatik paylaşılacaktır
+            Droto konumunuzu 112 ile otomatik paylaşmaz
           </div>
         </motion.div>
 
@@ -77,7 +77,7 @@ export default function SOS() {
           <SOSContactCard
             icon={ShieldAlert}
             title="Polis İmdat"
-            number="155"
+            number="112"
             color="text-blue-400"
             bg="bg-blue-400/10"
             border="border-blue-400/30"
@@ -85,7 +85,7 @@ export default function SOS() {
           <SOSContactCard
             icon={AlertTriangle}
             title="İtfaiye"
-            number="110"
+            number="112"
             color="text-orange-400"
             bg="bg-orange-400/10"
             border="border-orange-400/30"
@@ -133,7 +133,7 @@ export default function SOS() {
                   <div>
                     <h3 className="text-xl font-bold mb-2">112 Acil Servis</h3>
                     <p className="text-white/60 text-sm">
-                      Konum bilgileriniz otomatik olarak yetkililere iletilecektir. Lütfen sakin olun ve hattan ayrılmayın.
+                      Aşağıdaki düğme telefonunuzun arama ekranını açar. Konumunuzu ve durumu çağrı görevlisine bildirin; Droto otomatik ihbar veya konum aktarımı yapmaz.
                     </p>
                   </div>
                   <div className="flex flex-col gap-3">

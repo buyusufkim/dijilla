@@ -1,6 +1,8 @@
 node_modules/
 build/
 dist/
+server.cjs
+supabase/.temp/
 coverage/
 .DS_Store
 *.log

@@ -26,6 +26,7 @@ export default function Layout() {
   const navItems = [
     { icon: Home, label: "Ana Sayfa", path: "/home" },
     { icon: ShieldCheck, label: "Sigorta & Teklifler", path: "/insurance" },
+    { icon: ShieldCheck, label: "Yol Yardım & Talepler", path: "/requests" },
     { icon: Car, label: "Varlıklarım", path: "/garage" },
     { icon: Grid, label: "Hizmetler", path: "/services" },
     { icon: User, label: "Ailem & Profil", path: "/profile" },

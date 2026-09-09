@@ -1,10 +1,15 @@
+import { supabase } from '@/supabase';
+
 const API_URL = "/api/ai/generate";
 
 async function callAiEndpoint(payload: any) {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session) throw new Error('Devam etmek için giriş yapın.');
   const response = await fetch(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
     },
     body: JSON.stringify(payload),
   });

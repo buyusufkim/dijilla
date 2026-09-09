@@ -116,8 +116,12 @@ export default function Profile() {
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
+    try {
+      await signOut();
+      navigate("/login", { replace: true });
+    } catch {
+      toast.error('Çıkış yapılamadı. Lütfen tekrar deneyin.');
+    }
   };
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0];

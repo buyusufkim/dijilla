@@ -20,6 +20,7 @@ import {
 import { Vehicle, MaintenanceRecord, MaintenanceAppointment, Recommendation } from "@/components/maintenance/types";
 
 export default function Maintenance() {
+  const [saveError, setSaveError] = useState('');
   const { user } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -120,13 +121,15 @@ export default function Maintenance() {
   const handleAddRecord = async () => {
     if (!user || !selectedVehicle) return;
     try {
-      await db.from("maintenance_records").insert({
+      const { error } = await db.from("maintenance_records").insert({
         ...recordForm,
         user_id: user.id,
         vehicle_id: selectedVehicle.id,
         mileage: Number(recordForm.mileage),
         cost: Number(recordForm.cost)
       });
+      if (error) throw error;
+      setSaveError('');
       setIsAddingRecord(false);
       setRecordForm({
         service_type: "",
@@ -136,19 +139,21 @@ export default function Maintenance() {
         notes: "",
       });
     } catch (error) {
-      console.error("Error adding record:", error);
+      setSaveError('Bakım kaydı kaydedilemedi. Bilgileriniz formda duruyor; tekrar deneyin.');
     }
   };
 
   const handleAddAppointment = async () => {
     if (!user || !selectedVehicle) return;
     try {
-      await db.from("appointments").insert({
+      const { error } = await db.from("appointments").insert({
         ...appointmentForm,
         user_id: user.id,
         vehicle_id: selectedVehicle.id,
         status: "scheduled"
       });
+      if (error) throw error;
+      setSaveError('');
       setIsAddingAppointment(false);
       setAppointmentForm({
         service_type: "",
@@ -156,12 +161,14 @@ export default function Maintenance() {
         location: "",
       });
     } catch (error) {
-      console.error("Error adding appointment:", error);
+      setSaveError('Bakım planı kaydedilemedi. Lütfen tekrar deneyin.');
     }
   };
 
   return (
     <div className="flex flex-col gap-8 pb-12">
+      {saveError && <p role="alert" className="text-red-300">{saveError}</p>}
+      <div className="rounded-xl border border-white/10 p-4"><p className="text-white/70">Buradaki bakım planları kişisel takviminiz içindir; servise rezervasyon göndermez.</p><a className="inline-block mt-2 text-cyan-300 underline" href="/service-request">Servisten gerçek randevu talep et</a></div>
       <MaintenanceHeader 
         vehicles={vehicles} 
         selectedVehicle={selectedVehicle} 

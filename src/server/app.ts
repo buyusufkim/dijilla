@@ -1,8 +1,10 @@
-import express, { Request, Response, NextFunction } from "express";
-import quotesRouter from "./routes/quotes.routes.js";
-import checkoutsRouter from "./routes/checkouts.routes.js";
-import aiRouter from "./routes/ai.routes.js";
+import express, { Request, Response, NextFunction, RequestHandler } from "express";
+import { authMiddleware } from './lib/authMiddleware.js';
+import { pendingRouter } from './routes/pending.routes.js';
+import { createRequestsRouter } from './routes/requests.routes.js';
+import { supabaseAdmin } from './lib/supabase.js';
 
+export function createApp(authenticate: RequestHandler = authMiddleware) {
 const app = express();
 
 // Middleware
@@ -12,17 +14,16 @@ app.use(express.json());
 app.get("/api/health", (req: Request, res: Response) => {
   res.json({ 
     status: "ok", 
-    service: "Droto Insurtech Backend",
-    config: {
-      supabase: "configured"
-    }
+    service: "Droto Backend"
   });
 });
 
 // Routes
-app.use("/api/quotes", quotesRouter);
-app.use("/api/checkouts", checkoutsRouter);
-app.use("/api/ai", aiRouter);
+app.use('/api', authenticate);
+app.use('/api/requests', createRequestsRouter(supabaseAdmin));
+app.use('/api/quotes', pendingRouter('Sigorta talep sistemi hazırlanıyor. Henüz talep oluşturulmadı.'));
+app.use('/api/checkouts', pendingRouter('Uygulama içinden ödeme alınmıyor. Herhangi bir ödeme veya paket oluşturulmadı.'));
+app.use('/api/ai', pendingRouter('Yapay zekâ hizmeti kullanım sınırları hazırlanırken geçici olarak kapalı.'));
 
 // 404 Handler for API routes
 app.use("/api", (req: Request, res: Response) => {
@@ -34,13 +35,16 @@ app.use("/api", (req: Request, res: Response) => {
 
 // Error Handling Middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error("[AppError]", err.message);
-  res.status(err.status || 500).json({
+  const status = err.type === 'entity.too.large' ? 413 : err.type === 'entity.parse.failed' ? 400 : 500;
+  res.status(status).json({
     success: false,
     error: {
-      message: err.message || "Sunucu tarafında bir hata oluştu."
+      message: status === 400 ? 'Geçersiz istek.' : status === 413 ? 'İstek boyutu çok büyük.' : 'İşlem tamamlanamadı. Lütfen tekrar deneyin.'
     }
   });
 });
 
-export default app;
+return app;
+}
+
+export default createApp();
