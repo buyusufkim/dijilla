@@ -21,6 +21,7 @@ import { Vehicle, MaintenanceRecord, MaintenanceAppointment, Recommendation } fr
 
 export default function Maintenance() {
   const [saveError, setSaveError] = useState('');
+  const [reload, setReload] = useState(0);
   const { user } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -69,15 +70,22 @@ export default function Maintenance() {
 
   useEffect(() => {
     if (!user || !selectedVehicle) return;
+    let current = true;
+    setRecords([]);
+    setAppointments([]);
 
     const fetchRecords = async () => {
-      const { data } = await db.from("maintenance_records").select("*").eq("vehicle_id", selectedVehicle.id).order('date', { ascending: false });
+      const { data, error } = await db.from("maintenance_records").select("*").eq("vehicle_id", selectedVehicle.id).order('date', { ascending: false });
+      if (!current) return;
+      if (error) setSaveError('Bakım kayıtları yüklenemedi.');
       if (data) setRecords(data as MaintenanceRecord[]);
     };
     fetchRecords();
 
     const fetchAppointments = async () => {
-      const { data } = await db.from("appointments").select("*").eq("vehicle_id", selectedVehicle.id).eq("status", "scheduled").order('appointment_date', { ascending: true });
+      const { data, error } = await db.from("appointments").select("*").eq("vehicle_id", selectedVehicle.id).eq("status", "scheduled").order('appointment_date', { ascending: true });
+      if (!current) return;
+      if (error) setSaveError('Bakım planları yüklenemedi.');
       if (data) setAppointments(data as MaintenanceAppointment[]);
     };
     fetchAppointments();
@@ -85,14 +93,15 @@ export default function Maintenance() {
     const rSub = supabase.channel(`maintenance_${selectedVehicle.id}_records`).on("postgres_changes", { event: "*", schema: "public", table: "maintenance_records", filter: `vehicle_id=eq.${selectedVehicle.id}` }, fetchRecords).subscribe();
     const aSub = supabase.channel(`maintenance_${selectedVehicle.id}_appointments`).on("postgres_changes", { event: "*", schema: "public", table: "appointments", filter: `vehicle_id=eq.${selectedVehicle.id}` }, fetchAppointments).subscribe();
 
-    // Get AI Recommendations
-    fetchRecommendations(selectedVehicle);
+    // Vehicle-specific recommendations require a verified provider response.
+    setRecommendations([]);
 
     return () => {
+      current = false;
       supabase.removeChannel(rSub);
       supabase.removeChannel(aSub);
     };
-  }, [user, selectedVehicle]);
+  }, [user, selectedVehicle, reload]);
 
   const fetchRecommendations = async (vehicle: Vehicle) => {
     setIsLoadingRecs(true);
@@ -129,6 +138,7 @@ export default function Maintenance() {
         cost: Number(recordForm.cost)
       });
       if (error) throw error;
+      setReload(v => v + 1);
       setSaveError('');
       setIsAddingRecord(false);
       setRecordForm({
@@ -153,6 +163,7 @@ export default function Maintenance() {
         status: "scheduled"
       });
       if (error) throw error;
+      setReload(v => v + 1);
       setSaveError('');
       setIsAddingAppointment(false);
       setAppointmentForm({

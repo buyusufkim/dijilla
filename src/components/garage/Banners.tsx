@@ -50,8 +50,8 @@ export const MonetizationBanner: React.FC<MonetizationBannerProps> = ({ vehicle,
           <Zap className="w-6 h-6 text-[#0A1128]" />
         </div>
         <div>
-          <h4 className="font-bold text-[#0A1128] text-base sm:text-lg">Sigortada %25 İndirim Fırsatı!</h4>
-          <p className="text-[#0A1128]/80 text-xs sm:text-sm">Poliçenizi Droto güvencesiyle hemen yenileyin.</p>
+          <h4 className="font-bold text-[#0A1128] text-base sm:text-lg">Sigorta teklifi isteyin</h4>
+          <p className="text-[#0A1128]/80 text-xs sm:text-sm">Aracınız için teklif talebinizi iletin, ekibimiz sizinle görüşsün.</p>
         </div>
       </div>
       <Button className="w-full sm:w-auto bg-[#0A1128] text-white hover:bg-black font-bold gap-2 whitespace-nowrap">

@@ -86,12 +86,12 @@ export function createRequestsRouter(db: any) {
     const saved = checked(await db.rpc('droto_update_request', { p_id: row.id, p_actor: req.user!.id, p_version: input.version, p_action: input.action.type, p_state: state }));
     res.json({ request: present(saved) });
   }));
-  router.post('/:id/document', (req: AuthRequest, _res, next) => { void requireAdmin(req.user!.id).then(() => next(), next); }, express.raw({ type: 'application/pdf', limit: '5mb' }), wrap(async (req, res) => {
+  router.post('/:id/document', (req: AuthRequest, _res, next) => { void requireAdmin(req.user!.id).then(() => next(), next); }, express.raw({ type: 'application/pdf', limit: '4mb' }), wrap(async (req, res) => {
     const row = await find(String(req.params.id), req.user!.id, true);
     const expected = z.coerce.number().int().positive().parse(req.headers['x-record-version']);
     if (row.version !== expected) throw new RequestError(409, 'Kayıt değişmiş. Sayfayı yenileyin.');
     if (row.kind !== 'roadside' || row.state.stage !== 'paid' || row.state.cancellation?.decision === 'pending' || row.state.cancellation?.decision === 'approved') throw new RequestError(400, 'PDF yalnız ödemesi teyit edilen ve iptal incelemesinde olmayan pakete eklenebilir.');
-    if (!Buffer.isBuffer(req.body) || req.body.length < 5 || req.body.subarray(0,5).toString() !== '%PDF-') throw new RequestError(400, 'Geçerli bir PDF dosyası seçin (en fazla 5 MB).');
+    if (!Buffer.isBuffer(req.body) || req.body.length < 5 || req.body.subarray(0,5).toString() !== '%PDF-') throw new RequestError(400, 'Geçerli bir PDF dosyası seçin (en fazla 4 MB).');
     const path = `${row.id}/${randomUUID()}.pdf`;
     checked(await db.storage.from('droto-contracts').upload(path, req.body, { contentType: 'application/pdf', upsert: false }));
     const saved = await db.rpc('droto_update_request', { p_id: row.id, p_actor: req.user!.id, p_version: expected, p_action: 'attach_document', p_state: { ...row.state, documentPath: path } });
@@ -107,7 +107,7 @@ export function createRequestsRouter(db: any) {
   router.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (error instanceof z.ZodError) { res.status(400).json({ error: { message: 'Alanları kontrol edin.', fields: error.issues.map(i => ({ path: i.path.join('.'), message: i.message })) } }); return; }
     const status = error instanceof RequestError ? error.status : (error as any)?.type === 'entity.too.large' ? 413 : 503;
-    res.status(status).json({ error: { message: error instanceof RequestError ? error.message : status === 413 ? 'Dosya boyutu en fazla 5 MB olabilir.' : 'İşlem tamamlanamadı. Tekrar deneyin.' } });
+    res.status(status).json({ error: { message: error instanceof RequestError ? error.message : status === 413 ? 'Dosya boyutu en fazla 4 MB olabilir.' : 'İşlem tamamlanamadı. Tekrar deneyin.' } });
   });
   return router;
 }

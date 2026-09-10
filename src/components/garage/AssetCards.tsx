@@ -18,7 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Vehicle, HomeAsset } from "./types";
 import { calculateRisk } from "@/lib/risk-engine";
-import { calculateDaysLeft } from "./utils";
+import { dateStatus } from '@/domain/documents';
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -31,8 +31,8 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
   maintenanceRecords, 
   onNavigate
 }) => {
-  const daysToInsurance = calculateDaysLeft(vehicle.insurance_expiry);
-  const isInsuranceWarning = daysToInsurance <= 30;
+  const insuranceStatus = dateStatus(vehicle.insurance_expiry);
+  const isInsuranceWarning = insuranceStatus === 'warning' || insuranceStatus === 'expired';
   const latestMaintenance = maintenanceRecords.find(m => m.vehicle_id === vehicle.id);
   const risk = calculateRisk(vehicle);
 
@@ -49,12 +49,12 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
               {isInsuranceWarning ? (
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFD600]/20 text-[#FFD600] text-[10px] font-bold border border-[#FFD600]/30">
                   <AlertTriangle className="w-3 h-3" />
-                  Kasko ({daysToInsurance} gün)
+                  {insuranceStatus === 'expired' ? 'Kayıtlı sigorta tarihi geçti' : 'Kayıtlı sigorta tarihi yaklaşıyor'}
                 </div>
               ) : (
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00E676]/20 text-[#00E676] text-[10px] font-bold border border-[#00E676]/30">
                   <ShieldCheck className="w-3 h-3" />
-                  Kasko Aktif
+                  {insuranceStatus === 'unknown' ? 'Sigorta tarihi belirtilmedi' : 'Sigorta tarihi kayıtlı'}
                 </div>
               )}
               <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
@@ -156,7 +156,7 @@ export const HomeCard: React.FC<HomeCardProps> = ({ home }) => {
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium mb-3 border border-purple-500/30">
               <ShieldCheck className="w-3.5 h-3.5" />
-              DASK Aktif
+              Konut kaydı
             </div>
             <h2 className="text-2xl font-bold tracking-tight">
               {home.name}
@@ -171,7 +171,7 @@ export const HomeCard: React.FC<HomeCardProps> = ({ home }) => {
         </div>
         <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-2">
           <span className="text-sm text-white/60">
-            Detayları Görüntüle
+            Adres bilgileriniz
           </span>
           <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
         </div>

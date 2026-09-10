@@ -3,6 +3,7 @@ import { authMiddleware } from './lib/authMiddleware.js';
 import { pendingRouter } from './routes/pending.routes.js';
 import { createRequestsRouter } from './routes/requests.routes.js';
 import { supabaseAdmin } from './lib/supabase.js';
+import { createDocumentsRouter } from './routes/documents.routes.js';
 
 export function createApp(authenticate: RequestHandler = authMiddleware) {
 const app = express();
@@ -20,6 +21,7 @@ app.get("/api/health", (req: Request, res: Response) => {
 
 // Routes
 app.use('/api', authenticate);
+app.use('/api/documents', createDocumentsRouter(supabaseAdmin));
 app.use('/api/requests', createRequestsRouter(supabaseAdmin));
 app.use('/api/quotes', pendingRouter('Sigorta talep sistemi hazırlanıyor. Henüz talep oluşturulmadı.'));
 app.use('/api/checkouts', pendingRouter('Uygulama içinden ödeme alınmıyor. Herhangi bir ödeme veya paket oluşturulmadı.'));

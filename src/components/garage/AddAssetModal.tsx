@@ -25,8 +25,7 @@ interface AddAssetModalProps {
   setMileage: (mileage: number) => void;
   inspectionExpiry: string;
   setInspectionExpiry: (date: string) => void;
-  setReminder: boolean;
-  setSetReminder: (reminder: boolean) => void;
+  errorMessage: string;
   isSubmitting: boolean;
   onSubmit: () => void;
 }
@@ -52,8 +51,7 @@ export const AddAssetModal: React.FC<AddAssetModalProps> = ({
   setMileage,
   inspectionExpiry,
   setInspectionExpiry,
-  setReminder,
-  setSetReminder,
+  errorMessage,
   isSubmitting,
   onSubmit,
 }) => {
@@ -69,7 +67,7 @@ export const AddAssetModal: React.FC<AddAssetModalProps> = ({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-md"
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto"
           >
             <Card className="bg-[#1A233A] border-white/10 shadow-2xl">
               <CardHeader className="flex flex-row items-center justify-between border-b border-white/10 pb-4">
@@ -82,6 +80,8 @@ export const AddAssetModal: React.FC<AddAssetModalProps> = ({
                 </button>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
+                {errorMessage && <p role="alert" className="text-red-300">{errorMessage}</p>}
+                <fieldset disabled={isSubmitting} className="space-y-4 disabled:opacity-60">
                 <div className="space-y-2">
                   <label htmlFor="assetType" className="text-sm font-medium text-white/80">Varlık Türü</label>
                   <div id="assetType" className="grid grid-cols-2 gap-2">
@@ -160,7 +160,7 @@ export const AddAssetModal: React.FC<AddAssetModalProps> = ({
                         />
                       </div>
                       <div className="space-y-2">
-                        <label htmlFor="inspectionExpiry" className="text-sm font-medium text-white/80">Muayene Tarihi</label>
+                        <label htmlFor="inspectionExpiry" className="text-sm font-medium text-white/80">Muayene Bitişi (isteğe bağlı)</label>
                         <input
                           id="inspectionExpiry"
                           type="date"
@@ -198,19 +198,7 @@ export const AddAssetModal: React.FC<AddAssetModalProps> = ({
                         </select>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <input 
-                        type="checkbox" 
-                        id="setReminder" 
-                        checked={setReminder}
-                        onChange={(e) => setSetReminder(e.target.checked)}
-                        className="w-4 h-4 rounded border-white/10 bg-[#0A1128] text-[#00E5FF] focus:ring-[#00E5FF]/50"
-                      />
-                      <label htmlFor="setReminder" className="text-sm text-white/80 flex items-center gap-1">
-                        <Bell className="w-3 h-3 text-[#FFD600]" />
-                        Muayene hatırlatıcısı kur
-                      </label>
-                    </div>
+                    <p className="text-sm text-white/60">Bilmiyorsanız muayene tarihini boş bırakabilirsiniz.</p>
                   </>
                 ) : (
                   <div className="space-y-2">
@@ -251,6 +239,7 @@ export const AddAssetModal: React.FC<AddAssetModalProps> = ({
                     Lütfen tüm zorunlu alanları (*) doldurun.
                   </p>
                 )}
+                </fieldset>
               </CardContent>
             </Card>
           </motion.div>

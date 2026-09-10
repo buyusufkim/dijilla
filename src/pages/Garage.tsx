@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useFamily } from "@/context/FamilyContext";
-import { useNotifications } from "@/context/NotificationContext";
+import { vehicleSchema } from '@/domain/requests';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { db, supabase } from "@/lib/supabase-service";
@@ -14,7 +14,6 @@ import { AddAssetModal } from "@/components/garage/AddAssetModal";
 
 export default function Garage() {
   const { activeMember } = useFamily();
-  const { addNotification } = useNotifications();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isAddingAsset, setIsAddingAsset] = useState(false);
@@ -26,8 +25,9 @@ export default function Garage() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [fuelType, setFuelType] = useState("Benzin");
   const [mileage, setMileage] = useState(0);
-  const [inspectionExpiry, setInspectionExpiry] = useState(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-  const [setReminder, setSetReminder] = useState(true);
+  const [inspectionExpiry, setInspectionExpiry] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [reload, setReload] = useState(0);
   
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [homes, setHomes] = useState<HomeAsset[]>([]);
@@ -42,20 +42,23 @@ export default function Garage() {
     }
 
     const fetchVehicles = async () => {
-      const { data } = await db.from("vehicles").select("*").eq("user_id", user.id);
+      const { data, error } = await db.from("vehicles").select("*").eq("user_id", user.id);
+      if (error) setErrorMessage('Araçlar yüklenemedi. Lütfen yeniden deneyin.');
       if (data) setVehicles(data as Vehicle[]);
       setLoading(false);
     };
     fetchVehicles();
 
     const fetchHomes = async () => {
-      const { data } = await db.from("homes").select("*").eq("user_id", user.id);
+      const { data, error } = await db.from("homes").select("*").eq("user_id", user.id);
+      if (error) setErrorMessage('Konutlar yüklenemedi. Lütfen yeniden deneyin.');
       if (data) setHomes(data as HomeAsset[]);
     };
     fetchHomes();
 
     const fetchMaintenance = async () => {
-      const { data } = await db.from("maintenance_records").select("*").eq("user_id", user.id);
+      const { data, error } = await db.from("maintenance_records").select("*").eq("user_id", user.id).order('date', { ascending: false });
+      if (error) setErrorMessage('Bakım kayıtları yüklenemedi. Lütfen yeniden deneyin.');
       if (data) setMaintenanceRecords(data);
     };
     fetchMaintenance();
@@ -69,34 +72,33 @@ export default function Garage() {
       supabase.removeChannel(hSub);
       supabase.removeChannel(mSub);
     };
-  }, [user]);
+  }, [user, reload]);
 
   const handleAddAsset = async () => {
-    if (!user) return;
+    if (!user || isSubmitting) return;
+    setErrorMessage('');
 
     if (assetType === "vehicle") {
       if (!assetName.trim() || !brand.trim() || !model.trim() || !year) return;
       setIsSubmitting(true);
       try {
-        await db.from("vehicles").insert({
+        const validated = vehicleSchema.parse({plate:assetName,brand,model,modelYear:Number(year),usage:'Otomobil (Hususi)'});
+        if (!Number.isInteger(mileage) || mileage < 0 || mileage > 10000000) throw new Error('Kilometre geçerli değil.');
+        const { data, error } = await db.from("vehicles").insert({
           user_id: user.id,
-          plate: assetName,
-          brand_model: `${brand} ${model}`,
+          plate: validated.plate,
+          brand: validated.brand,
+          model: validated.model,
+          brand_model: `${validated.brand} ${validated.model}`,
           year: Number(year),
           mileage: Number(mileage),
           fuel_type: fuelType,
-          insurance_expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          inspection_expiry: inspectionExpiry,
-          tax_status: 'Ödendi'
-        });
-
-        if (setReminder) {
-          addNotification({
-            title: "Muayene Hatırlatıcısı Kuruldu",
-            message: `${assetName} plakalı aracınızın muayenesi için hatırlatıcı ayarlandı.`,
-            type: "info"
-          });
-        }
+          insurance_expiry: null,
+          inspection_expiry: inspectionExpiry || null,
+          tax_status: null
+        }).select('*').single();
+        if (error || !data) throw error || new Error('Kayıt doğrulanamadı.');
+        setVehicles(rows => [...rows.filter(row => row.id !== data.id), data]);
 
         setIsAddingAsset(false);
         setAssetName("");
@@ -105,10 +107,9 @@ export default function Garage() {
         setYear(new Date().getFullYear());
         setFuelType("Benzin");
         setMileage(0);
-        setInspectionExpiry(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+        setInspectionExpiry('');
       } catch (error) {
-        console.error('Error adding vehicle:', error);
-        alert("Araç eklenirken bir hata oluştu.");
+        setErrorMessage('Araç kaydedilemedi. Plaka, yıl ve kilometre bilgilerini kontrol edin; formunuz korunuyor.');
       } finally {
         setIsSubmitting(false);
       }
@@ -116,18 +117,19 @@ export default function Garage() {
       if (!assetName.trim() || !assetDetail.trim()) return;
       setIsSubmitting(true);
       try {
-        await db.from("homes").insert({
+        const { data, error } = await db.from("homes").insert({
           user_id: user.id,
           name: assetName,
           address: assetDetail
-        });
+        }).select('*').single();
+        if (error || !data) throw error || new Error('Kayıt doğrulanamadı.');
+        setHomes(rows => [...rows.filter(row => row.id !== data.id), data]);
 
         setIsAddingAsset(false);
         setAssetName("");
         setAssetDetail("");
       } catch (error) {
-        console.error('Error adding home:', error);
-        alert("Konut eklenirken bir hata oluştu.");
+        setErrorMessage('Konut kaydedilemedi. Bilgileriniz formda duruyor; tekrar deneyin.');
       } finally {
         setIsSubmitting(false);
       }
@@ -137,6 +139,7 @@ export default function Garage() {
   return (
     <div className="flex flex-col gap-8 pb-12 relative w-full overflow-x-hidden">
       <GarageHeader onAddClick={() => setIsAddingAsset(true)} />
+      {errorMessage && <p role="alert" className="text-red-300">{errorMessage} <button className="underline" onClick={()=>{setErrorMessage('');setReload(v=>v+1);}}>Yeniden yükle</button></p>}
 
       <PremiumBanner onClick={() => navigate('/premium')} />
 
@@ -187,7 +190,7 @@ export default function Garage() {
 
       <AddAssetModal 
         isOpen={isAddingAsset}
-        onClose={() => setIsAddingAsset(false)}
+        onClose={() => { if (!isSubmitting) setIsAddingAsset(false); }}
         assetType={assetType}
         setAssetType={setAssetType}
         assetName={assetName}
@@ -206,8 +209,7 @@ export default function Garage() {
         setMileage={setMileage}
         inspectionExpiry={inspectionExpiry}
         setInspectionExpiry={setInspectionExpiry}
-        setReminder={setReminder}
-        setSetReminder={setSetReminder}
+        errorMessage={errorMessage}
         isSubmitting={isSubmitting}
         onSubmit={handleAddAsset}
       />

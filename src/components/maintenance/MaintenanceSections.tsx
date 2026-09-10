@@ -16,10 +16,11 @@ export const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({ 
     <div className="flex items-center justify-between mb-4">
       <h2 className="text-xl font-bold flex items-center gap-2">
         <Info className="w-5 h-5 text-[#00E5FF]" />
-        Önerilen Bakım Planı
+        Bakım bilgisi
       </h2>
       {isLoadingRecs && <Clock className="w-4 h-4 text-[#00E5FF] animate-spin" />}
     </div>
+    {!isLoadingRecs && recommendations.length === 0 && <p className="text-white/60 mb-4">Aracınızın bakım aralıkları için üreticinin bakım kitapçığını veya yetkili servisi esas alın. Kendi bakım planınızı aşağıdan kaydedebilirsiniz.</p>}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {recommendations.map((rec, idx) => (
         <Card key={idx} className="bg-[#1A233A] border-white/10 hover:border-[#00E5FF]/30 transition-all">
