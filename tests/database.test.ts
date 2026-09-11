@@ -14,6 +14,7 @@ test('Postgres: migrations, owner isolation, RPC privileges, idempotency and ver
       create schema storage; create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
       create table public.checkouts(id uuid); grant all on public.checkouts to authenticated;`);
     await db.exec(await readFile(new URL('../supabase/migrations/20260909191803_droto_requests.sql', import.meta.url), 'utf8'));
+    await db.exec(await readFile(new URL('../supabase/migrations/20260910193419_droto_application_settings.sql', import.meta.url), 'utf8'));
     const owner='11111111-1111-4111-8111-111111111111', other='22222222-2222-4222-8222-222222222222', admin='33333333-3333-4333-8333-333333333333', key='44444444-4444-4444-8444-444444444444';
     await db.exec(`insert into auth.users values('${owner}'),('${other}'),('${admin}'); insert into public.droto_admins(user_id) values('${admin}'); update public.droto_settings set requests_enabled=true,privacy_text='Test purposes privacy notice only.'; set role service_role;`);
     const createSql='select public.droto_create_request($1,$2,$3,$4,$5,$6,$7) as result';

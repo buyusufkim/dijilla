@@ -9,6 +9,7 @@ import { NotificationProvider } from './context/NotificationContext.js';
 // Lazy load page components
 const AuthPage = lazy(() => import("./pages/AuthPage.js"));
 const RequestCenter = lazy(() => import('./pages/RequestCenter.js'));
+const ApplicationSettings = lazy(() => import('./pages/ApplicationSettings.js'));
 const Home = lazy(() => import("./pages/Home.js"));
 const Services = lazy(() => import("./pages/Services.js"));
 const SOS = lazy(() => import("./pages/SOS.js"));
@@ -43,7 +44,8 @@ export const AppRoutes = () => {
           <Route path="requests" element={<RequestCenter key="requests" />} />
           <Route path="roadside" element={<RequestCenter key="roadside" initialKind="roadside" />} />
           <Route path="service-request" element={<RequestCenter key="service" initialKind="service" />} />
-          <Route path="admin" element={<RequestCenter key="admin" adminView />} />
+          <Route path="settings" element={<ApplicationSettings />} />
+          <Route path="admin" element={<Navigate to="/settings" replace />} />
           <Route path="services" element={<Services />} />
           <Route path="sos" element={<SOS />} />
           <Route path="garage" element={<Garage />} />

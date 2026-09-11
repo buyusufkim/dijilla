@@ -282,7 +282,7 @@ export default function Profile() {
                 icon={Settings}
                 label="Uygulama Ayarları"
                 color="text-white/80"
-                onClick={() => toast.info("Uygulama ayarları yakında aktif olacaktır.")}
+                onClick={() => navigate('/settings')}
               />
               <MenuItem
                 icon={HelpCircle}

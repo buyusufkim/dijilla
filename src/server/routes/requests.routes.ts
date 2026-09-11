@@ -3,11 +3,11 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { actionSchema, parseRequest, transition, requestStatus, type RequestRecord } from '../../domain/requests.js';
 import type { AuthRequest } from '../lib/authMiddleware.js';
+import { applicationSettingsSchema } from '../../domain/settings.js';
 
 class RequestError extends Error { constructor(public status: number, message: string) { super(message); } }
 const uuid = z.uuid();
 const version = z.number().int().positive();
-const settingsSchema = z.object({ version, phone: z.string().regex(/^(?:\+?90\d{10})?$/), whatsapp: z.string().regex(/^(?:90\d{10})?$/), privacy_text: z.string().trim().max(20000), requests_enabled: z.boolean() }).strict().refine(v => !v.requests_enabled || (v.privacy_text.length >= 20 && !!v.phone), 'Talepleri açmak için iletişim telefonu ve bilgilendirme metni gerekli.');
 const catalogSchema = z.object({ version, name: z.string().trim().min(1).max(100), price_minor: z.number().int().positive().max(10000000), description: z.string().trim().max(5000), active: z.boolean() }).strict();
 function checked(result: any) {
   if (result.error) {
@@ -53,12 +53,15 @@ export function createRequestsRouter(db: any) {
   router.post('/', wrap(async (req, res) => {
     let input;
     try { input = parseRequest(req.body); } catch (e) { if (e instanceof z.ZodError) throw e; throw new RequestError(400, (e as Error).message); }
+    const settings = checked(await db.from('droto_settings').select('version,enabled_kinds').eq('id',true).single());
+    if (settings.version !== input.settingsVersion) throw new RequestError(409,'Ayarlar güncellendi. Sayfayı yenileyip tekrar deneyin.');
+    if (!settings.enabled_kinds.includes(input.kind)) throw new RequestError(409,'Bu talep türü şu anda kapalı.');
     const row = checked(await db.rpc('droto_create_request', { p_user: req.user!.id, p_kind: input.kind, p_payload: input.payload, p_package: input.packageId ?? null, p_catalog_version: input.catalogVersion ?? null, p_settings_version: input.settingsVersion, p_key: input.idempotencyKey }));
     res.status(201).json({ request: present(row) });
   }));
   router.put('/settings', wrap(async (req, res) => {
     await requireAdmin(req.user!.id);
-    const { version: expected, ...values } = settingsSchema.parse(req.body);
+    const { version: expected, ...values } = applicationSettingsSchema.parse(req.body);
     const row = checked(await db.from('droto_settings').update({ ...values, version: expected + 1, updated_at: new Date().toISOString() }).eq('id', true).eq('version', expected).select('*').maybeSingle());
     if (!row) throw new RequestError(409, 'Ayarlar değişmiş. Sayfayı yenileyin.');
     res.json({ settings: row });
