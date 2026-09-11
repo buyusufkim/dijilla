@@ -11,7 +11,6 @@ import {
   Plus,
   Trash2,
   X,
-  Bell,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFamily } from "@/context/FamilyContext";
@@ -20,6 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/supabase-service";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import NotificationPreferences from "@/components/NotificationPreferences";
 
 export default function Profile() {
   const { members, activeMember, addMember, removeMember, loading: familyLoading } = useFamily();
@@ -30,12 +30,6 @@ export default function Profile() {
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState<"spouse" | "child" | "parent">("child");
   const [profile, setProfile] = useState<any>(null);
-  const [notificationSettings, setNotificationSettings] = useState({
-    insurance_expiry: true,
-    inspection_reminders: true,
-    service_alerts: true,
-  });
-
   useEffect(() => {
     if (!user) return;
 
@@ -49,9 +43,6 @@ export default function Profile() {
         
         if (data) {
           setProfile(data);
-          if (data.notification_settings) {
-            setNotificationSettings(data.notification_settings);
-          }
         }
       } catch (error) {
         console.error("Error fetching profile catch:", error);
@@ -60,28 +51,6 @@ export default function Profile() {
 
     fetchProfile();
   }, [user]);
-
-  const toggleNotification = async (key: string) => {
-    if (!user) return;
-    const currentVal = notificationSettings[key as keyof typeof notificationSettings];
-    const newSettings = {
-      ...notificationSettings,
-      [key]: !currentVal,
-    };
-    
-    // Optimistic update
-    setNotificationSettings(newSettings);
-    
-    try {
-      await db.from("profiles").update({
-        notification_settings: newSettings
-      }).eq("id", user.id);
-    } catch (error) {
-      console.error("Error updating notification settings:", error);
-      // Revert state on error
-      setNotificationSettings(notificationSettings);
-    }
-  };
 
   const handleAddMember = () => {
     if (!newMemberName.trim()) return;
@@ -149,7 +118,7 @@ export default function Profile() {
                 <Plus className="w-4 h-4" /> Yeni Ekle
               </Button>
             </CardHeader>
-            <CardContent className="space-y-4 pt-4">
+            <CardContent className="space-y-4 pt-4"><p className="text-xs leading-relaxed text-slate-400">Bu liste yalnız bu tarayıcıda tutulur. Üye eklemek davet göndermez veya araç ve belgelerinize erişim vermez.</p>
               {familyLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="w-8 h-8 border-2 border-[#00E5FF]/20 border-t-[#00E5FF] rounded-full animate-spin" />
@@ -204,35 +173,7 @@ export default function Profile() {
             </CardContent>
           </Card>
 
-          {/* Notification Settings */}
-          <Card className="bg-[#1A233A] border-white/10">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Bell className="w-5 h-5 text-[#00E5FF]" />
-                Bildirim Ayarları
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <NotificationToggle
-                label="Sigorta Vadesi Hatırlatıcıları"
-                description="Poliçe bitiş tarihinden önce bildirim alın."
-                isActive={notificationSettings.insurance_expiry}
-                onToggle={() => toggleNotification("insurance_expiry")}
-              />
-              <NotificationToggle
-                label="Muayene Hatırlatıcıları"
-                description="Araç muayene tarihlerini kaçırmayın."
-                isActive={notificationSettings.inspection_reminders}
-                onToggle={() => toggleNotification("inspection_reminders")}
-              />
-              <NotificationToggle
-                label="Servis Uyarıları"
-                description="Bakım ve servis zamanları hakkında bilgi alın."
-                isActive={notificationSettings.service_alerts}
-                onToggle={() => toggleNotification("service_alerts")}
-              />
-            </CardContent>
-          </Card>
+          {user && <NotificationPreferences key={user.id} userId={user.id} />}
 
           {/* Gamification Wallet */}
           <motion.section
@@ -288,7 +229,7 @@ export default function Profile() {
                 icon={HelpCircle}
                 label="Destek & SSS"
                 color="text-white/80"
-                onClick={() => toast.info("Destek merkezi yakında aktif olacaktır.")}
+                onClick={() => navigate("/support")}
               />
               <button 
                 onClick={handleSignOut}
@@ -408,29 +349,6 @@ export default function Profile() {
           </div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-function NotificationToggle({ label, description, isActive, onToggle }: any) {
-  return (
-    <div className="flex items-center justify-between gap-4 p-4 bg-[#0A1128] rounded-2xl border border-white/5">
-      <div className="space-y-1 flex-1">
-        <h4 className="font-medium text-white/90">{label}</h4>
-        <p className="text-xs text-white/50">{description}</p>
-      </div>
-      <button
-        onClick={onToggle}
-        className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none shrink-0 ${
-          isActive ? "bg-[#00E5FF]" : "bg-white/10"
-        }`}
-      >
-        <motion.div
-          animate={{ x: isActive ? 26 : 2 }}
-          className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm"
-          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-        />
-      </button>
     </div>
   );
 }
